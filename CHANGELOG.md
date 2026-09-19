@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## New Game System
+
+Energy/mana system — cards actually use their cost.
+10-card-per-turn energy curve — 1 energy on turn 1, 2 on turn 2, etc.
+Creature combat with ATK/DEF.
+Guard / Swift / Ward / Lifesteal / Burn / Debuff foundations.
+Temporary buffs.
+Persistent relics.
+Creature health/damage state, rather than immediately destroying based only on ATK.
+Maximum hand size.
+Deck-out loss.
+Proper turn phases.
+Card targeting hooks.
+Event/action log.
+Game state designed so we can later serialize it for your P2P mesh protocol.
+Keeps your existing HTML element IDs so this doesn't require rebuilding the frontend yet.
+
+One important architectural change: don't put arbitrary network behavior inside card effects. Cards modify the local game state; later the P2P layer will transmit a validated action such as PLAY_CARD, ATTACK, or END_TURN.
+
+That gives us an actual resource curve, which is one of the biggest things missing from the original game.
+
+There is also a much better distinction between the card database and game state:
+
+cards.js
+   │
+   ├── Ember Whelp
+   ├── Stone Guardian
+   ├── Fireball
+   ├── etc.
+   │
+   ▼
+game.js
+   │
+   ├── Player state
+   ├── Energy
+   ├── Hand
+   ├── Battlefield
+   ├── Combat
+   ├── Effects
+   ├── Turns
+   └── Win conditions
+
+
+
 ## [v1.13.4](https://github.com/inspect-js/object-inspect/compare/v1.13.3...v1.13.4) - 2025-02-04
 
 ### Commits
