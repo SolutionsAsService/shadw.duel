@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## New Game System
 
+```text
 Energy/mana system — cards actually use their cost.
 10-card-per-turn energy curve — 1 energy on turn 1, 2 on turn 2, etc.
 Creature combat with ATK/DEF.
@@ -46,7 +47,7 @@ game.js
    ├── Effects
    ├── Turns
    └── Win conditions
-
+```
 
 
 ## [v1.13.4](https://github.com/inspect-js/object-inspect/compare/v1.13.3...v1.13.4) - 2025-02-04
