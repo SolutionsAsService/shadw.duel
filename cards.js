@@ -944,7 +944,7 @@ function createCard(template) {
 // This can later become a proper deck-builder.
 //
 
-function buildDeck() {
+function buildDeck(rng) {
 
   const deck = [];
 
@@ -1031,7 +1031,7 @@ function buildDeck() {
   });
 
 
-  return shuffle(deck);
+  return rng ? shuffle(deck, rng) : shuffle(deck);
 }
 
 
@@ -1060,16 +1060,49 @@ function getAllCards() {
 
 
 // ============================================================
+// SEEDED RANDOM NUMBER GENERATOR
+// ============================================================
+//
+// Deterministic RNG used for multiplayer matches.
+//
+// When two players start a networked duel, the host generates
+// a single match seed. Both browsers feed that seed into this
+// generator, so both players shuffle and draw from identical
+// decks without ever sending card data over the network.
+//
+// mulberry32 — small, fast, well-distributed 32-bit PRNG.
+//
+
+function createSeededRandom(seed) {
+
+  let state = seed >>> 0;
+
+  return function () {
+
+    state = (state + 0x6d2b79f5) >>> 0;
+
+    let t = state;
+
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+
+// ============================================================
 // SHUFFLE
 // ============================================================
 
-function shuffle(array) {
+function shuffle(array, rng = Math.random) {
 
   const copy = array.slice();
 
   for (let i = copy.length - 1; i > 0; i--) {
 
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
 
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
@@ -1129,6 +1162,7 @@ if (typeof module !== "undefined" && module.exports) {
     findCardTemplate,
 
     shuffle,
+    createSeededRandom,
 
   };
 
