@@ -944,7 +944,7 @@ function createCard(template) {
 // This can later become a proper deck-builder.
 //
 
-function buildDeck(rng) {
+function buildDeckCards() {
 
   const deck = [];
 
@@ -991,6 +991,7 @@ function buildDeck(rng) {
     if (!template) return;
 
     deck.push(createCard(template));
+
     deck.push(createCard(template));
   });
 
@@ -1031,7 +1032,40 @@ function buildDeck(rng) {
   });
 
 
-  return rng ? shuffle(deck, rng) : shuffle(deck);
+  return deck;
+}
+
+
+// ============================================================
+// BUILD A DECK (RANDOM OR DETERMINISTIC)
+// ============================================================
+//
+// Multiplayer note:
+//
+// Card instances carry process-local ids (`card-1`, `card-2`…),
+// so without a seed every browser would build decks whose ids
+// diverge after shuffling. For online matches the host sends a
+// single match seed and BOTH browsers call
+//
+//   buildSeededDeck(seed, seat)
+//
+// which produces identical decks (and identical card ids) on
+// both machines. Actions can then reference card ids safely.
+//
+
+function buildDeck() {
+
+  return shuffle(buildDeckCards());
+}
+
+
+function buildSeededDeck(seed, seat) {
+
+  const rng = createSeededRandom(
+    ((seed >>> 0) ^ Math.imul((seat + 1), 0x9e3779b9)) >>> 0
+  );
+
+  return shuffle(buildDeckCards(), rng);
 }
 
 
@@ -1158,6 +1192,7 @@ if (typeof module !== "undefined" && module.exports) {
     RELIC_TEMPLATES,
 
     buildDeck,
+    buildSeededDeck,
     getAllCards,
     findCardTemplate,
 
