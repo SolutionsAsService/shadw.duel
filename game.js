@@ -2682,6 +2682,16 @@ function render() {
 
   renderGameOver();
 
+
+  // Let the lobby chrome (end-turn / surrender / rematch
+  // buttons) reflect whose turn it is after every change.
+  if (
+    typeof window.ShadowLobbyUI === "object" &&
+    typeof window.ShadowLobbyUI.updateTurnChrome === "function"
+  ) {
+    window.ShadowLobbyUI.updateTurnChrome();
+  }
+
 }
 
 
@@ -2926,7 +2936,7 @@ window.ShadowDuel = window.ShadowDuelGame;
 // into a local duel so the page always works standalone.
 //
 
-if (typeof window.ShadowLobby === "undefined") {
+if (typeof window.ShadowLobbyUI === "undefined") {
 
   window.ShadowDuelGame.startLocal();
 
