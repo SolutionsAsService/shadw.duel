@@ -238,9 +238,13 @@ function viewSeat() {
 
 
 // True when the local user is allowed to act right now.
+// While applying a peer's action the engine is executing on
+// the peer's behalf, so the seat check is bypassed.
 function isLocalPlayersTurn() {
 
   if (!isOnline()) return true;
+
+  if (applyingRemoteAction) return true;
 
   return (
     !game.gameOver &&
@@ -264,9 +268,16 @@ function playerName(index) {
 // browsers then run the exact same action through the engine.
 //
 
+// True while applying an action received from the peer, so
+// engine functions don't try to send it straight back.
+let applyingRemoteAction = false;
+
+
 function dispatchAction(action) {
 
   if (!isOnline()) return true;
+
+  if (applyingRemoteAction) return true;
 
   if (typeof session.onAction !== "function") {
     return false;
@@ -284,6 +295,10 @@ function forfeitLocalPlayer() {
 
     const seat = session.localSeat;
 
+    // The surrender travels as a normal game action so both
+    // engines end the match deterministically. The optional
+    // onSurrender callback lets the lobby send a notification
+    // alongside it.
     if (dispatchAction({ type: "surrender" })) {
 
       endGame(
@@ -316,32 +331,47 @@ function applyRemoteAction(action) {
 
   if (!isOnline() || !action || game.gameOver) return;
 
-  if (game.currentPlayer === session.localSeat) {
+  // Surrender can legally arrive during our own turn; every
+  // other action is only valid on the peer's turn.
+  if (
+    action.type !== "surrender" &&
+    game.currentPlayer === session.localSeat
+  ) {
     // Not the peer's turn — ignore out-of-turn messages.
     return;
   }
 
-  switch (action.type) {
+  applyingRemoteAction = true;
 
-    case "play":
-      playCardById(action.cardId);
-      break;
+  try {
 
-    case "attack":
-      performAttack(action.attacker, action.target);
-      break;
+    switch (action.type) {
 
-    case "end":
-      endTurn();
-      break;
+      case "play":
+        playCardById(action.cardId);
+        break;
 
-    case "surrender":
-      endGame(
-        session.localSeat,
-        `${playerName(1 - session.localSeat)} surrendered.`
-      );
-      render();
-      break;
+      case "attack":
+        performAttack(action.attacker, action.target);
+        break;
+
+      case "end":
+        endTurn();
+        break;
+
+      case "surrender":
+        endGame(
+          session.localSeat,
+          `${playerName(1 - session.localSeat)} surrendered.`
+        );
+        render();
+        break;
+
+    }
+
+  } finally {
+
+    applyingRemoteAction = false;
 
   }
 
@@ -1860,6 +1890,10 @@ function endTurn() {
   if (game.gameOver) return;
 
   if (!isLocalPlayersTurn()) return;
+
+  // Online: hand the action to the peer first; both browsers
+  // then run the identical end-turn sequence.
+  if (!dispatchAction({ type: "end" })) return;
 
 
   if (

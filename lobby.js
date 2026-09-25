@@ -98,18 +98,20 @@ function showScreen(name) {
 
   lobby.screen = name;
 
-  [
-    "lobby-menu",
-    "lobby-create",
-    "lobby-join",
-    "lobby-waiting",
-  ].forEach((screenId) => {
+  const screenIds = {
+    menu: "lobby-menu",
+    creating: "lobby-create",
+    joining: "lobby-join",
+    waiting: "lobby-waiting",
+  };
+
+  Object.values(screenIds).forEach((screenId) => {
 
     const screen = el(screenId);
 
     if (!screen) return;
 
-    if (screenId === `lobby-${name}`) {
+    if (screenId === screenIds[name]) {
       show(screen);
     } else {
       hide(screen);
@@ -702,9 +704,16 @@ function wireNetwork() {
 
     if (lobby.screen === "playing") return;
 
-    showLobbyError(message || "Connection error.");
-
+    // A lobby error (bad code, full lobby, server down)
+    // always returns the user to the form they came from.
     lobby.role = null;
+
+    const target =
+      lobby.screen === "creating" ? "creating" : "joining";
+
+    showScreen(target);
+
+    showLobbyError(message || "Connection error.");
 
   };
 
@@ -1014,6 +1023,8 @@ function init() {
   }
 
 
+  // Wire network + events FIRST so showScreen() above is the
+  // final word on which screen is displayed.
   wireNetwork();
 
   wireEvents();

@@ -510,7 +510,17 @@
   };
 
   net.sendSurrender = function () {
-    return sendToPeer({ type: "surrender" });
+    // Send the surrender as a game action so the peer's engine
+    // applies it deterministically, plus a notification for
+    // any UI that listens for it.
+    const delivered = sendToPeer({
+      type: "action",
+      action: { type: "surrender" },
+    });
+
+    sendToPeer({ type: "surrender" });
+
+    return delivered;
   };
 
   net.sendRematch = function () {

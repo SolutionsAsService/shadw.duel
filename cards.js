@@ -1065,7 +1065,20 @@ function buildSeededDeck(seed, seat) {
     ((seed >>> 0) ^ Math.imul((seat + 1), 0x9e3779b9)) >>> 0
   );
 
-  return shuffle(buildDeckCards(), rng);
+  const deck = shuffle(buildDeckCards(), rng);
+
+  // Re-assign ids AFTER shuffling so a card's id depends only
+  // on the seed, the seat, and its final deck position. This
+  // keeps card ids identical on both browsers even across
+  // rematches, where the global createCard id counter would
+  // otherwise drift.
+  deck.forEach((card, index) => {
+
+    card.id = `s${seat}-${seed >>> 0}-${index}`;
+
+  });
+
+  return deck;
 }
 
 

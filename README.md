@@ -71,8 +71,14 @@ The current game includes:
 * Card detail interface
 * Responsive desktop and mobile interface
 * Dark fantasy / premium tabletop visual design
-* Connection-status interface prepared for future multiplayer
-* Network status interface prepared for future P2P functionality
+* Main menu with local and online modes
+* Player lobbies with 4-character join codes
+* Shareable lobby invite links (`?lobby=CODE`)
+* Waiting room with player slots
+* Online 1v1 duels over WebRTC data channels
+* Deterministic seeded decks for synchronized matches
+* Surrender and rematch support
+* Live connection status and latency display
 
 ---
 
@@ -91,7 +97,9 @@ Shadow Duel/
 ├── index.html
 ├── style.css
 ├── cards.js
-└── game.js
+├── game.js
+├── network.js
+└── lobby.js
 ```
 
 ### `package.json`
@@ -102,9 +110,9 @@ The current application uses Express for local web serving.
 
 ### `server.js`
 
-Runs the lightweight Express server and serves the Shadow Duel application.
+Runs the lightweight Express server, serves the Shadow Duel application, and hosts the **WebSocket lobby / signaling service** used to create and join lobbies and to introduce two browsers to each other.
 
-At the current stage, the server is primarily a **web host** rather than the authority for the duel itself.
+At the current stage, the server is primarily a **web host + matchmaker** rather than the authority for the duel itself.
 
 The long-term architecture may use the server for things such as:
 
@@ -153,6 +161,21 @@ The interface is designed around a combination of:
 * High-contrast game information
 
 There are no external CSS frameworks required.
+
+### `lobby.js`
+
+Owns screen flow outside the duel itself:
+
+* Main menu (local duel / create lobby / join lobby)
+* Lobby creation and join-by-code (or shareable `?lobby=CODE` link)
+* Waiting room with player slots and invite copying
+* Match start handshake (host picks the deterministic seed)
+* Bridges `ShadowNet` (network.js) and `ShadowDuelGame` (game.js)
+* Connection status and network panel updates
+
+### `network.js`
+
+Browser P2P layer (`ShadowNet`). The WebSocket server is used only for lobby creation and WebRTC signaling; once the two browsers connect, all game traffic flows directly over a WebRTC DataChannel.
 
 ### `cards.js`
 
@@ -549,6 +572,18 @@ The current game remains playable without a network connection.
 
 ---
 
+# Playing Online
+
+Start the server, then open the game in two browsers (or two devices on the same network):
+
+1. **Player 1** clicks **CREATE LOBBY**, enters a name, and shares the 4-character code (or clicks the code to copy an invite link).
+2. **Player 2** clicks **JOIN LOBBY** (or opens the invite link), enters the code and their name.
+3. Once the peer-to-peer connection is established, **Player 1** presses **START DUEL**.
+
+Both browsers build identical decks from the host's match seed and exchange validated actions directly over WebRTC — game state never touches the server.
+
+---
+
 # Local Development
 
 Install the dependencies:
@@ -628,24 +663,24 @@ The browser should be capable of running the actual duel.
 
 ## Phase 3 — Multiplayer Foundation
 
-* [ ] Deterministic card identifiers
-* [ ] Match seed generation
-* [ ] Deterministic deck generation
-* [ ] Action serialization
-* [ ] Network action validation
-* [ ] Match synchronization
+* [x] Deterministic card identifiers
+* [x] Match seed generation
+* [x] Deterministic deck generation
+* [x] Action serialization
+* [x] Network action validation
+* [x] Match synchronization
 * [ ] Desync detection
 * [ ] Reconnection handling
 
 ## Phase 4 — P2P
 
-* [ ] WebRTC connection
-* [ ] Peer discovery
-* [ ] Matchmaking
-* [ ] Signaling
-* [ ] Connection negotiation
-* [ ] Latency monitoring
-* [ ] Peer disconnect handling
+* [x] WebRTC connection
+* [x] Peer discovery (lobby codes)
+* [x] Matchmaking (create / join lobby)
+* [x] Signaling
+* [x] Connection negotiation
+* [x] Latency monitoring
+* [x] Peer disconnect handling
 * [ ] Match recovery
 
 ## Phase 5 — Decentralized / Mesh Integration
