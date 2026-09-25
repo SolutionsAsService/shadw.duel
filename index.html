@@ -354,7 +354,7 @@
       </div>
 
 
-      <!-- End turn -->
+      <!-- Turn controls -->
       <div class="turn-control">
 
         <button
@@ -364,6 +364,15 @@
         >
           <span>END TURN</span>
           <small>↵</small>
+        </button>
+
+        <button
+          id="surrender-btn"
+          class="secondary-button surrender-button"
+          type="button"
+          title="Concede the duel"
+        >
+          SURRENDER
         </button>
 
       </div>
@@ -471,6 +480,254 @@
 
 
     <!-- =========================================================
+         LOBBY OVERLAY
+         ========================================================= -->
+    <div
+      id="lobby-overlay"
+      class="lobby-overlay"
+      aria-hidden="false"
+    >
+
+      <div class="lobby-box">
+
+          <div class="lobby-brand">
+          <div class="lobby-brand-mark" aria-hidden="true">⚔</div>
+
+          <h2>Shadow Duel</h2>
+
+          <p>TACTICAL CARD COMBAT</p>
+        </div>
+
+
+        <!-- ================================================
+             MAIN MENU
+             ================================================ -->
+        <div id="lobby-menu" class="lobby-screen">
+
+          <button
+            id="menu-local-btn"
+            class="primary-button lobby-menu-button"
+            type="button"
+          >
+            LOCAL DUEL
+            <small>Two players, one device</small>
+          </button>
+
+          <button
+            id="menu-create-btn"
+            class="primary-button lobby-menu-button"
+            type="button"
+          >
+            CREATE LOBBY
+            <small>Host an online duel</small>
+          </button>
+
+          <button
+            id="menu-join-btn"
+            class="secondary-button lobby-menu-button"
+            type="button"
+          >
+            JOIN LOBBY
+            <small>Enter a friend's code</small>
+          </button>
+
+          <p class="lobby-footnote">
+            Online duels connect directly browser-to-browser
+            over WebRTC. The server only introduces players.
+          </p>
+
+        </div>
+
+
+        <!-- ================================================
+             CREATE LOBBY
+             ================================================ -->
+        <div id="lobby-create" class="lobby-screen hidden">
+
+          <h3 class="lobby-title">CREATE LOBBY</h3>
+
+          <label class="lobby-field">
+            <span>YOUR NAME</span>
+
+            <input
+              id="create-name"
+              type="text"
+              maxlength="24"
+              autocomplete="off"
+              placeholder="Player"
+            />
+          </label>
+
+          <p
+            id="create-error"
+            class="lobby-error hidden"
+            role="alert"
+          ></p>
+
+          <div class="lobby-actions">
+
+            <button
+              id="create-lobby-btn"
+              class="primary-button"
+              type="button"
+            >
+              CREATE
+            </button>
+
+            <button
+              id="create-back-btn"
+              class="secondary-button"
+              type="button"
+            >
+              BACK
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================================================
+             JOIN LOBBY
+             ================================================ -->
+        <div id="lobby-join" class="lobby-screen hidden">
+
+          <h3 class="lobby-title">JOIN LOBBY</h3>
+
+          <label class="lobby-field">
+            <span>LOBBY CODE</span>
+
+            <input
+              id="join-code"
+              class="lobby-code-input"
+              type="text"
+              maxlength="4"
+              autocomplete="off"
+              autocapitalize="characters"
+              placeholder="ABCD"
+            />
+          </label>
+
+          <label class="lobby-field">
+            <span>YOUR NAME</span>
+
+            <input
+              id="join-name"
+              type="text"
+              maxlength="24"
+              autocomplete="off"
+              placeholder="Player"
+            />
+          </label>
+
+          <p
+            id="join-error"
+            class="lobby-error hidden"
+            role="alert"
+          ></p>
+
+          <div class="lobby-actions">
+
+            <button
+              id="join-lobby-btn"
+              class="primary-button"
+              type="button"
+            >
+              JOIN
+            </button>
+
+            <button
+              id="join-back-btn"
+              class="secondary-button"
+              type="button"
+            >
+              BACK
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================================================
+             WAITING ROOM
+             ================================================ -->
+        <div id="lobby-waiting" class="lobby-screen hidden">
+
+          <h3 class="lobby-title">LOBBY</h3>
+
+          <div class="lobby-code-row">
+
+            <button
+              id="lobby-code-display"
+              class="lobby-code"
+              type="button"
+              title="Copy invite link"
+            >
+              ----
+            </button>
+
+            <button
+              id="copy-invite-btn"
+              class="secondary-button"
+              type="button"
+            >
+              COPY INVITE
+            </button>
+
+          </div>
+
+          <div class="waiting-players">
+
+            <div class="waiting-slot">
+              <span class="waiting-slot-label">YOU</span>
+              <strong id="waiting-you">Player</strong>
+            </div>
+
+            <div class="waiting-versus" aria-hidden="true">⚔</div>
+
+            <div class="waiting-slot">
+              <span class="waiting-slot-label">OPPONENT</span>
+              <strong id="waiting-opponent">
+                Waiting for opponent…
+              </strong>
+            </div>
+
+          </div>
+
+          <p id="waiting-hint" class="lobby-footnote">
+            Share the code with a friend.
+          </p>
+
+          <div class="lobby-actions">
+
+            <button
+              id="start-match-btn"
+              class="primary-button"
+              type="button"
+              disabled
+            >
+              WAITING FOR OPPONENT…
+            </button>
+
+            <button
+              id="cancel-lobby-btn"
+              class="secondary-button"
+              type="button"
+            >
+              LEAVE LOBBY
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================
          GAME OVER OVERLAY
          ========================================================= -->
     <div
@@ -530,7 +787,9 @@
        =========================================================== -->
 
   <script src="cards.js"></script>
+  <script src="network.js"></script>
   <script src="game.js"></script>
+  <script src="lobby.js"></script>
 
 </body>
 </html>

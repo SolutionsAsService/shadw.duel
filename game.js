@@ -13,17 +13,26 @@
 //   - validate player actions
 //
 // NETWORKING NOTE:
-// Do NOT put networking logic inside these functions.
-// Later the mesh layer can transmit actions such as:
+// Networking never reaches inside the rules. Online matches run
+// the same engine on both browsers. Local input is turned into
+// small action objects which are (a) applied locally and (b)
+// sent to the peer, which applies the same validated action:
 //
-//   PLAY_CARD
-//   ATTACK
-//   END_TURN
+//   { type: "play", cardId }
+//   { type: "attack", attacker, target }   // target null = direct
+//   { type: "end" }
+//   { type: "surrender" }
 //
-// The game engine remains responsible for deciding whether
-// those actions are legal.
+// Both sides use the host-provided match seed, so decks are
+// identical on both machines and game state stays in sync.
+//
+// lobby.js owns screen flow (menu / lobby / duel). This file
+// owns the duel itself.
 //
 // ============================================================
+
+(function () {
+"use strict";
 
 
 // ============================================================
@@ -175,6 +184,201 @@ const game = {
 
 
 // ============================================================
+// MATCH SESSION
+// ============================================================
+//
+// Describes how the current duel is being played:
+//
+//   local  — both players share this browser (pass-and-play).
+//   online — you control one seat; the peer controls the other.
+//
+// lobby.js configures this through ShadowDuelGame.configure()
+// before starting a match.
+//
+
+const session = {
+
+  mode: "local",
+
+  // Which player index (0 or 1) belongs to the local user.
+  // Null in local mode (the user controls whoever is active).
+  localSeat: null,
+
+  // Display names shown in the UI.
+  playerNames: ["Player 1", "Player 2"],
+
+  // Deterministic match seed (online mode).
+  seed: null,
+
+  // Callbacks wired by lobby.js (online mode only).
+  onAction: null,       // (action) => {}        send game action
+  onSurrender: null,    // () => {}              notify surrender
+  onOpponentLeft: null, // () => {}              peer went away
+
+};
+
+
+// ============================================================
+// SEAT / TURN HELPERS
+// ============================================================
+
+function isOnline() {
+
+  return session.mode === "online";
+}
+
+
+// The player index whose cards we see face-up and control.
+function viewSeat() {
+
+  return isOnline()
+    ? session.localSeat
+    : game.currentPlayer;
+}
+
+
+// True when the local user is allowed to act right now.
+// While applying a peer's action the engine is executing on
+// the peer's behalf, so the seat check is bypassed.
+function isLocalPlayersTurn() {
+
+  if (!isOnline()) return true;
+
+  if (applyingRemoteAction) return true;
+
+  return (
+    !game.gameOver &&
+    game.currentPlayer === session.localSeat
+  );
+}
+
+
+function playerName(index) {
+
+  return session.playerNames[index] || `Player ${index + 1}`;
+}
+
+
+// ============================================================
+// ONLINE ACTION DISPATCH
+// ============================================================
+//
+// In online mode a local action is only applied after the
+// network layer confirms it was handed to the peer. Both
+// browsers then run the exact same action through the engine.
+//
+
+// True while applying an action received from the peer, so
+// engine functions don't try to send it straight back.
+let applyingRemoteAction = false;
+
+
+function dispatchAction(action) {
+
+  if (!isOnline()) return true;
+
+  if (applyingRemoteAction) return true;
+
+  if (typeof session.onAction !== "function") {
+    return false;
+  }
+
+  return session.onAction(action) === true;
+}
+
+
+function forfeitLocalPlayer() {
+
+  if (game.gameOver) return;
+
+  if (isOnline() && session.localSeat !== null) {
+
+    const seat = session.localSeat;
+
+    // The surrender travels as a normal game action so both
+    // engines end the match deterministically. The optional
+    // onSurrender callback lets the lobby send a notification
+    // alongside it.
+    if (dispatchAction({ type: "surrender" })) {
+
+      endGame(
+        1 - seat,
+        `${playerName(seat)} surrendered.`
+      );
+
+      render();
+
+      if (typeof session.onSurrender === "function") {
+        session.onSurrender();
+      }
+    }
+
+    return;
+  }
+
+  // Local mode: the active player concedes.
+  endGame(
+    1 - game.currentPlayer,
+    `${playerName(game.currentPlayer)} surrendered.`
+  );
+
+  render();
+}
+
+
+// Applies a validated action received from the peer.
+function applyRemoteAction(action) {
+
+  if (!isOnline() || !action || game.gameOver) return;
+
+  // Surrender can legally arrive during our own turn; every
+  // other action is only valid on the peer's turn.
+  if (
+    action.type !== "surrender" &&
+    game.currentPlayer === session.localSeat
+  ) {
+    // Not the peer's turn — ignore out-of-turn messages.
+    return;
+  }
+
+  applyingRemoteAction = true;
+
+  try {
+
+    switch (action.type) {
+
+      case "play":
+        playCardById(action.cardId);
+        break;
+
+      case "attack":
+        performAttack(action.attacker, action.target);
+        break;
+
+      case "end":
+        endTurn();
+        break;
+
+      case "surrender":
+        endGame(
+          session.localSeat,
+          `${playerName(1 - session.localSeat)} surrendered.`
+        );
+        render();
+        break;
+
+    }
+
+  } finally {
+
+    applyingRemoteAction = false;
+
+  }
+
+}
+
+
+// ============================================================
 // LOGGING
 // ============================================================
 
@@ -231,7 +435,7 @@ function dealDamage(playerIndex, amount, source = "effect") {
   game.players[1 - playerIndex].damageDealt += amount;
 
   addLog(
-    `Player ${playerIndex + 1} takes ${amount} damage (${source}).`
+    `${playerName(playerIndex)} takes ${amount} damage (${source}).`
   );
 
   checkLifePoints();
@@ -258,7 +462,7 @@ function healPlayer(playerIndex, amount) {
   if (healed > 0) {
 
     addLog(
-      `Player ${playerIndex + 1} restores ${healed} Life Points.`
+      `${playerName(playerIndex)} restores ${healed} Life Points.`
     );
 
   }
@@ -280,7 +484,7 @@ function checkLifePoints() {
 
     endGame(
       1,
-      "Player 1 ran out of Life Points!"
+      `${playerName(0)} ran out of Life Points!`
     );
 
     return;
@@ -293,7 +497,7 @@ function checkLifePoints() {
 
     endGame(
       0,
-      "Player 2 ran out of Life Points!"
+      `${playerName(1)} ran out of Life Points!`
     );
 
   }
@@ -322,7 +526,7 @@ function endGame(winnerIndex, reason) {
   addLog(reason);
 
   addLog(
-    `Player ${winnerIndex + 1} wins!`
+    `${playerName(winnerIndex)} wins!`
   );
 
 }
@@ -342,7 +546,7 @@ function drawCards(playerIndex, count) {
 
       endGame(
         1 - playerIndex,
-        `Player ${playerIndex + 1} ran out of cards!`
+        `${playerName(playerIndex)} ran out of cards!`
       );
 
       return false;
@@ -359,7 +563,7 @@ function drawCards(playerIndex, count) {
     if (player.hand.length >= GAME_RULES.maxHandSize) {
 
       addLog(
-        `Player ${playerIndex + 1}'s hand is full. ${card.name} is discarded.`
+        `${playerName(playerIndex)}'s hand is full. ${card.name} is discarded.`
       );
 
       continue;
@@ -754,7 +958,7 @@ function playMonster(cardId) {
 
 
   addLog(
-    `Player ${playerIndex + 1} summoned ${card.name} `
+    `${playerName(playerIndex)} summoned ${card.name} `
     + `(${getMonsterAttack(card, playerIndex)} ATK / `
     + `${getMonsterDefense(card, playerIndex)} DEF) `
     + `for ${cost} energy.`
@@ -857,7 +1061,7 @@ function playSpell(cardId) {
 
 
   addLog(
-    `Player ${playerIndex + 1} cast ${card.name} `
+    `${playerName(playerIndex)} cast ${card.name} `
     + `for ${cost} energy: ${card.text}`
   );
 
@@ -948,7 +1152,7 @@ function playRelic(cardId) {
 
 
   addLog(
-    `Player ${playerIndex + 1} played relic ${card.name}.`
+    `${playerName(playerIndex)} played relic ${card.name}.`
   );
 
 
@@ -963,6 +1167,128 @@ function playRelic(cardId) {
 
 
   render();
+
+}
+
+
+// ============================================================
+// PLAY CARD BY ID (ANY TYPE)
+// ============================================================
+
+function playCardById(cardId) {
+
+  const player = currentPlayer();
+
+  const card = player.hand.find(
+    (entry) => entry.id === cardId
+  );
+
+  if (!card) return;
+
+  if (card.type === "monster") {
+    playMonster(cardId);
+  } else if (card.type === "spell") {
+    playSpell(cardId);
+  } else if (card.type === "relic") {
+    playRelic(cardId);
+  }
+
+}
+
+
+// ============================================================
+// PERFORM ATTACK
+// ============================================================
+//
+// Shared combat entry point for local input and remote
+// actions. `target` of null means a direct attack.
+//
+
+function performAttack(attackerSlotIndex, targetSlotIndex) {
+
+  if (game.gameOver) return;
+
+  if (game.phase !== "main") return;
+
+
+  const attackerIndex = game.currentPlayer;
+
+  const defenderIndex = 1 - attackerIndex;
+
+
+  const attackerSlot =
+    game.players[attackerIndex].field[attackerSlotIndex];
+
+
+  if (!attackerSlot) return;
+
+  if (attackerSlot.stunned) return;
+
+  if (attackerSlot.summonSickness) return;
+
+  if (attackerSlot.hasAttacked) return;
+
+
+  game.selectedAttacker = attackerSlotIndex;
+
+
+  const defenderField =
+    game.players[defenderIndex].field;
+
+
+  const defenderHasMonsters =
+    defenderField.some((slot) => slot !== null);
+
+
+  // ----------------------------------------------------------
+  // DIRECT ATTACK
+  // ----------------------------------------------------------
+
+  if (targetSlotIndex === null || targetSlotIndex === undefined) {
+
+    if (defenderHasMonsters) {
+
+      addLog(
+        "Your opponent still has monsters. "
+        + "Destroy them before attacking directly."
+      );
+
+      game.selectedAttacker = null;
+
+      render();
+
+      return;
+    }
+
+
+    attackDirectly(attackerSlot);
+
+
+    game.selectedAttacker = null;
+
+    checkLifePoints();
+
+    render();
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // MONSTER ATTACK
+  // ----------------------------------------------------------
+
+  if (!defenderField[targetSlotIndex]) {
+
+    game.selectedAttacker = null;
+
+    render();
+
+    return;
+  }
+
+
+  attackMonster(targetSlotIndex);
 
 }
 
@@ -1376,7 +1702,7 @@ function attackMonster(defenderSlotIndex) {
     addLog(
       `${defender.name} destroys ${attacker.name}!`
       + (excess > 0
-        ? ` ${excess} damage to Player ${attackerIndex + 1}.`
+        ? ` ${excess} damage to ${playerName(attackerIndex)}.`
         : "")
     );
 
@@ -1421,6 +1747,9 @@ function attackSlot(defenderSlotIndex) {
   if (game.gameOver) return;
 
 
+  if (!isLocalPlayersTurn()) return;
+
+
   if (game.selectedAttacker === null) {
 
     addLog(
@@ -1431,84 +1760,24 @@ function attackSlot(defenderSlotIndex) {
   }
 
 
-  const attackerIndex =
-    game.currentPlayer;
+  const attacker = game.selectedAttacker;
 
-  const defenderIndex =
-    1 - attackerIndex;
-
-
-  const attackerSlot =
-    game.players[attackerIndex]
-      .field[game.selectedAttacker];
+  const target =
+    defenderSlotIndex === null ||
+    defenderSlotIndex === undefined
+      ? null
+      : defenderSlotIndex;
 
 
-  if (!attackerSlot) {
-
-    game.selectedAttacker = null;
-
-    render();
-
-    return;
+  if (
+    dispatchAction({
+      type: "attack",
+      attacker,
+      target,
+    })
+  ) {
+    performAttack(attacker, target);
   }
-
-
-  const defenderField =
-    game.players[defenderIndex].field;
-
-
-  const defenderHasMonsters =
-    defenderField.some(
-      (slot) => slot !== null
-    );
-
-
-  // ----------------------------------------------------------
-  // DIRECT ATTACK
-  // ----------------------------------------------------------
-
-  if (defenderSlotIndex === null) {
-
-    if (defenderHasMonsters) {
-
-      addLog(
-        "Your opponent still has monsters. "
-        + "Destroy them before attacking directly."
-      );
-
-      return;
-    }
-
-
-    attackDirectly(
-      attackerSlot
-    );
-
-
-    game.selectedAttacker = null;
-
-    checkLifePoints();
-
-    render();
-
-    return;
-  }
-
-
-  // ----------------------------------------------------------
-  // MONSTER ATTACK
-  // ----------------------------------------------------------
-
-  const defenderSlot =
-    defenderField[defenderSlotIndex];
-
-
-  if (!defenderSlot) return;
-
-
-  attackMonster(
-    defenderSlotIndex
-  );
 
 }
 
@@ -1601,7 +1870,7 @@ function startTurn() {
 
 
   addLog(
-    `— Player ${playerIndex + 1}'s turn —`
+    `— ${playerName(playerIndex)}'s turn —`
   );
 
 
@@ -1619,6 +1888,12 @@ function startTurn() {
 function endTurn() {
 
   if (game.gameOver) return;
+
+  if (!isLocalPlayersTurn()) return;
+
+  // Online: hand the action to the peer first; both browsers
+  // then run the identical end-turn sequence.
+  if (!dispatchAction({ type: "end" })) return;
 
 
   if (
@@ -1672,16 +1947,18 @@ function endTurn() {
 
   startTurn();
 
+  game.selectedCard = null;
+
   render();
 
 }
 
 
 // ============================================================
-// RESTART GAME
+// RESET GAME STATE
 // ============================================================
 
-function restartGame() {
+function resetGameState() {
 
   game.players = [
     createPlayer(),
@@ -1707,6 +1984,16 @@ function restartGame() {
 
   game.pendingAction = null;
 
+}
+
+
+// ============================================================
+// RESTART GAME (LOCAL / REMATCH)
+// ============================================================
+
+function restartGame() {
+
+  resetGameState();
 
   startGame();
 
@@ -1719,12 +2006,28 @@ function restartGame() {
 
 function startGame() {
 
-  game.players[0].deck =
-    shuffle(buildDeck());
+  // ----------------------------------------------------------
+  // Decks
+  //
+  // Online matches build both decks from the shared match
+  // seed so every card id is identical on both browsers.
+  // ----------------------------------------------------------
 
+  if (isOnline() && Number.isFinite(session.seed)) {
 
-  game.players[1].deck =
-    shuffle(buildDeck());
+    game.players[0].deck =
+      buildSeededDeck(session.seed, 0);
+
+    game.players[1].deck =
+      buildSeededDeck(session.seed, 1);
+
+  } else {
+
+    game.players[0].deck = buildDeck();
+
+    game.players[1].deck = buildDeck();
+
+  }
 
 
   // ----------------------------------------------------------
@@ -1765,12 +2068,12 @@ function startGame() {
 
 
   addLog(
-    "Player 1 goes first."
+    `${playerName(0)} goes first.`
   );
 
 
   addLog(
-    `Player 1 has ${game.players[0].energy} energy.`
+    `${playerName(0)} has ${game.players[0].energy} energy.`
   );
 
 
@@ -1902,11 +2205,9 @@ function cardEl(card, extraClass) {
 
 function renderOpponentInfo() {
 
-  const me =
-    game.currentPlayer;
+  const seat = viewSeat();
 
-  const opp =
-    1 - me;
+  const opp = 1 - seat;
 
 
   const opponent =
@@ -1923,7 +2224,7 @@ function renderOpponentInfo() {
 
 
   element.textContent =
-    `Player ${opp + 1}: `
+    `${playerName(opp)} — `
     + `${opponent.lp} LP `
     + `(${opponent.deck.length} cards left)`;
 
@@ -1936,12 +2237,11 @@ function renderOpponentInfo() {
 
 function renderPlayerInfo() {
 
-  const me =
-    game.currentPlayer;
+  const seat = viewSeat();
 
 
   const player =
-    game.players[me];
+    game.players[seat];
 
 
   const element =
@@ -1954,7 +2254,7 @@ function renderPlayerInfo() {
 
 
   element.textContent =
-    `Player ${me + 1}: `
+    `${playerName(seat)} — `
     + `${player.lp} LP `
     + `(${player.deck.length} cards left) `
     + `— Energy ${player.energy}/${player.maxEnergy}`;
@@ -1979,7 +2279,7 @@ function renderTurnInfo() {
 
   element.textContent =
     `Turn ${game.turnNumber} `
-    + `— Player ${game.currentPlayer + 1}'s turn `
+    + `— ${playerName(game.currentPlayer)}'s turn `
     + `— ${game.phase}`;
 
 }
@@ -1992,7 +2292,7 @@ function renderTurnInfo() {
 function renderOpponentHand() {
 
   const opp =
-    1 - game.currentPlayer;
+    1 - viewSeat();
 
 
   const oppHand =
@@ -2035,7 +2335,7 @@ function renderOpponentHand() {
 function renderOpponentField() {
 
   const opp =
-    1 - game.currentPlayer;
+    1 - viewSeat();
 
 
   const oppField =
@@ -2092,7 +2392,8 @@ function renderOpponentField() {
       // ------------------------------------------------------
 
       if (
-        game.selectedAttacker !== null
+        game.selectedAttacker !== null &&
+        isLocalPlayersTurn()
       ) {
 
         zone.classList.add(
@@ -2124,8 +2425,9 @@ function renderOpponentField() {
 
 function renderPlayerField() {
 
-  const me =
-    game.currentPlayer;
+  const seat = viewSeat();
+
+  const myTurn = isLocalPlayersTurn();
 
 
   const playerField =
@@ -2140,7 +2442,7 @@ function renderPlayerField() {
   playerField.innerHTML = "";
 
 
-  game.players[me].field.forEach(
+  game.players[seat].field.forEach(
     (slot, index) => {
 
       const zone =
@@ -2162,7 +2464,8 @@ function renderPlayerField() {
         if (
           slot.summonSickness ||
           slot.hasAttacked ||
-          slot.stunned
+          slot.stunned ||
+          !myTurn
         ) {
 
           el.classList.add(
@@ -2183,10 +2486,14 @@ function renderPlayerField() {
         }
 
 
-        el.onclick =
-          () => selectAttacker(
-            index
-          );
+        if (myTurn) {
+
+          el.onclick =
+            () => selectAttacker(
+              index
+            );
+
+        }
 
 
         zone.appendChild(
@@ -2218,12 +2525,13 @@ function renderPlayerField() {
 
 function renderPlayerHand() {
 
-  const me =
-    game.currentPlayer;
+  const seat = viewSeat();
+
+  const myTurn = isLocalPlayersTurn();
 
 
   const player =
-    game.players[me];
+    game.players[seat];
 
 
   const playerHand =
@@ -2246,6 +2554,7 @@ function renderPlayerHand() {
 
 
       const playable =
+        myTurn &&
         player.energy >= cost;
 
 
@@ -2261,6 +2570,20 @@ function renderPlayerHand() {
       el.onclick =
         () => {
 
+          if (!myTurn) {
+
+            addLog(
+              isOnline()
+                ? "Waiting for your opponent…"
+                : "It is not your turn."
+            );
+
+            render();
+
+            return;
+          }
+
+
           if (!playable) {
 
             addLog(
@@ -2273,32 +2596,13 @@ function renderPlayerHand() {
           }
 
 
-          if (card.type === "monster") {
-
-            playMonster(
-              card.id
-            );
-
-          }
-
-          else if (
-            card.type === "spell"
+          if (
+            dispatchAction({
+              type: "play",
+              cardId: card.id,
+            })
           ) {
-
-            playSpell(
-              card.id
-            );
-
-          }
-
-          else if (
-            card.type === "relic"
-          ) {
-
-            playRelic(
-              card.id
-            );
-
+            playCardById(card.id);
           }
 
         };
@@ -2366,7 +2670,7 @@ function renderGameOver() {
     if (text) {
 
       text.textContent =
-        `Player ${game.winner + 1} wins!`;
+        `${playerName(game.winner)} wins!`;
 
     }
 
@@ -2412,6 +2716,16 @@ function render() {
 
   renderGameOver();
 
+
+  // Let the lobby chrome (end-turn / surrender / rematch
+  // buttons) reflect whose turn it is after every change.
+  if (
+    typeof window.ShadowLobbyUI === "object" &&
+    typeof window.ShadowLobbyUI.updateTurnChrome === "function"
+  ) {
+    window.ShadowLobbyUI.updateTurnChrome();
+  }
+
 }
 
 
@@ -2445,34 +2759,164 @@ if (restartButton) {
 
   restartButton.addEventListener(
     "click",
-    restartGame
+    () => {
+
+      // In online mode rematches are coordinated by the host
+      // through lobby.js — this button is hidden there.
+      restartGame();
+
+    }
   );
 
 }
 
 
 // ============================================================
-// START
-// ============================================================
-
-startGame();
-
-
-// ============================================================
-// OPTIONAL DEBUG API
+// CONTROLLER API
 // ============================================================
 //
-// Available from the browser console.
+// Used by lobby.js to drive matches, and available from the
+// browser console for debugging:
 //
-// Example:
-//
-//   ShadowDuel.debug()
-//   ShadowDuel.state()
-//
-// This is useful while developing the P2P layer.
+//   ShadowDuelGame.state()
+//   ShadowDuelGame.startLocal()
+//   ShadowDuelGame.startOnline({ seed, localSeat, ... })
 //
 
-window.ShadowDuel = {
+window.ShadowDuelGame = {
+
+  startLocal(options = {}) {
+
+    session.mode = "local";
+
+    session.localSeat = null;
+
+    session.playerNames = [
+      options.name0 || "Player 1",
+      options.name1 || "Player 2",
+    ];
+
+    session.seed = null;
+
+    session.onAction = null;
+
+    session.onSurrender = null;
+
+    session.onOpponentLeft = null;
+
+
+    restartGame();
+
+  },
+
+
+  startOnline(options = {}) {
+
+    session.mode = "online";
+
+    session.localSeat =
+      options.localSeat === 1 ? 1 : 0;
+
+    session.playerNames = [
+      options.name0 || "Player 1",
+      options.name1 || "Player 2",
+    ];
+
+    session.seed =
+      Number.isFinite(options.seed)
+        ? options.seed >>> 0
+        : null;
+
+    session.onAction =
+      typeof options.onAction === "function"
+        ? options.onAction
+        : null;
+
+    session.onSurrender =
+      typeof options.onSurrender === "function"
+        ? options.onSurrender
+        : null;
+
+    session.onOpponentLeft =
+      typeof options.onOpponentLeft === "function"
+        ? options.onOpponentLeft
+        : null;
+
+
+    restartGame();
+
+  },
+
+
+  // Remote peer action entry point (wired by lobby.js).
+  receiveAction(action) {
+
+    applyRemoteAction(action);
+
+  },
+
+
+  // Peer disconnected mid-match.
+  handleOpponentLeft() {
+
+    if (!isOnline() || game.gameOver) return;
+
+    endGame(
+      session.localSeat,
+      `${playerName(1 - session.localSeat)} left the duel.`
+    );
+
+    render();
+
+    if (typeof session.onOpponentLeft === "function") {
+      session.onOpponentLeft();
+    }
+
+  },
+
+
+  surrender() {
+
+    forfeitLocalPlayer();
+
+  },
+
+
+  // ----------------------------------------------------------
+  // State access
+  // ----------------------------------------------------------
+
+  state() {
+
+    return game;
+
+  },
+
+
+  session() {
+
+    return session;
+
+  },
+
+
+  isOnline() {
+
+    return isOnline();
+
+  },
+
+
+  isMyTurn() {
+
+    return isLocalPlayersTurn();
+
+  },
+
+
+  // ----------------------------------------------------------
+  // Debug helpers
+  // ----------------------------------------------------------
 
   debug() {
 
@@ -2480,13 +2924,6 @@ window.ShadowDuel = {
       "Shadow Duel state:",
       game
     );
-
-    return game;
-
-  },
-
-
-  state() {
 
     return game;
 
@@ -2517,4 +2954,27 @@ window.ShadowDuel = {
   },
 
 };
+
+
+// Legacy alias kept for console tooling.
+window.ShadowDuel = window.ShadowDuelGame;
+
+
+// ============================================================
+// BOOT
+// ============================================================
+//
+// When lobby.js is present it owns screen flow and starts the
+// match — either from the menu (local duel) or after a lobby
+// connects (online duel). Without lobby.js we boot straight
+// into a local duel so the page always works standalone.
+//
+
+if (typeof window.ShadowLobbyUI === "undefined") {
+
+  window.ShadowDuelGame.startLocal();
+
+}
+
+})();
 
