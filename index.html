@@ -16,6 +16,7 @@
   <title>Shadow Duel</title>
 
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="duel-ui.css" />
 </head>
 
 <body>
@@ -43,6 +44,9 @@
         </span>
       </div>
 
+      <nav class="duel-utilities" aria-label="Game tools">
+      <button class="utility-button" type="button" data-open-collection>Cards</button>
+      <button class="utility-button" type="button" data-open-rules>Rules</button>
       <button
         id="menu-btn"
         class="icon-button"
@@ -52,6 +56,7 @@
       >
         ☰
       </button>
+      </nav>
 
     </header>
 
@@ -503,6 +508,8 @@
              MAIN MENU
              ================================================ -->
         <div id="lobby-menu" class="lobby-screen">
+          <div id="menu-art" class="menu-art" aria-hidden="true"></div>
+          <p class="menu-intro">Build your field. Master the elements. Outplay your rival.</p>
 
           <button
             id="menu-local-btn"
@@ -532,9 +539,12 @@
           </button>
 
           <p class="lobby-footnote">
-            Online duels connect directly browser-to-browser
-            over WebRTC. The server only introduces players.
+            <span id="collection-total">55</span> illustrated cards · 7 elements · One shared starter deck list
           </p>
+          <div class="menu-tools">
+            <button class="utility-button" type="button" data-open-collection>Explore the cards</button>
+            <button class="utility-button" type="button" data-open-rules>How to play</button>
+          </div>
 
         </div>
 
@@ -787,9 +797,11 @@
        =========================================================== -->
 
   <script src="cards.js"></script>
+  <script src="card-art.js"></script>
   <script src="network.js"></script>
   <script src="game.js"></script>
   <script src="lobby.js"></script>
+  <script src="duel-ui.js"></script>
 
 </body>
 </html>

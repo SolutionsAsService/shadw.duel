@@ -1,0 +1,44 @@
+name: Shadow Duel verification
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run art:check
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Start local game
+        run: |
+          mkdir -p artifacts
+          PORT=4198 HOST=127.0.0.1 node server.js > artifacts/server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4198/health; then exit 0; fi
+            sleep 0.2
+          done
+          exit 1
+      - name: Local and real two-peer browser checks
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shadow-duel-verification
+          path: |
+            artifacts/**/*.json
+            artifacts/**/*.png
+            artifacts/server.log
+          if-no-files-found: ignore

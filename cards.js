@@ -19,22 +19,15 @@
 //   light
 //   neutral
 //
-// KEYWORDS:
-//   guard       - defensive creature
-//   swift       - intended to attack quickly
-//   piercing    - intended for future DEF penetration
-//   lifesteal   - intended to recover LP from combat
-//   ward        - intended to resist effects
-//   summon      - creates another creature
-//   draw        - card advantage
-//   burn        - direct damage
-//   heal        - restores LP
-//   buff        - improves another card
-//   debuff      - weakens an opponent
-//   sacrifice   - future resource mechanic
-//
-// The current game engine may not implement every keyword yet.
-// The card data is intentionally prepared for those mechanics.
+// KEYWORDS (rules shared by every creature carrying the keyword):
+//   guard     - enemy attacks must target a Guard while one is present
+//   swift     - can attack on the turn it is summoned
+//   lifesteal - restores LP equal to combat LP damage actually dealt
+//   ward      - immune to hostile creature effects (not combat)
+//   burn      - deals 200 additional LP damage after winning an attack
+//   heal      - restores 300 LP when summoned
+//   debuff    - on summon, enemies without Ward lose 100 ATK/DEF until
+//               the start of their controller's next turn
 //
 // ============================================================
 
@@ -498,7 +491,7 @@ const SPELL_TEMPLATES = [
     text: "Restore 800 Life Points.",
 
     effect: (game, playerIndex) => {
-      game.players[playerIndex].lp += 800;
+      game.healPlayer(playerIndex, 800);
     },
   },
 
@@ -512,11 +505,9 @@ const SPELL_TEMPLATES = [
     text: "Restore 500 Life Points and draw 1 card.",
 
     effect: (game, playerIndex) => {
-      game.players[playerIndex].lp += 500;
+      game.healPlayer(playerIndex, 500);
 
-      if (typeof game.drawCards === "function") {
-        game.drawCards(playerIndex, 1);
-      }
+      game.drawCards(playerIndex, 1);
     },
   },
 
@@ -530,8 +521,7 @@ const SPELL_TEMPLATES = [
     text: "Deal 500 damage directly to your opponent.",
 
     effect: (game, playerIndex) => {
-      const opponent = game.players[1 - playerIndex];
-      opponent.lp -= 500;
+      game.dealDamage(1 - playerIndex, 500, "spell");
     },
   },
 
@@ -545,8 +535,7 @@ const SPELL_TEMPLATES = [
     text: "Deal 250 damage directly to your opponent.",
 
     effect: (game, playerIndex) => {
-      const opponent = game.players[1 - playerIndex];
-      opponent.lp -= 250;
+      game.dealDamage(1 - playerIndex, 250, "spell");
     },
   },
 
@@ -560,9 +549,7 @@ const SPELL_TEMPLATES = [
     text: "Draw 2 cards.",
 
     effect: (game, playerIndex) => {
-      if (typeof game.drawCards === "function") {
-        game.drawCards(playerIndex, 2);
-      }
+      game.drawCards(playerIndex, 2);
     },
   },
 
@@ -576,9 +563,7 @@ const SPELL_TEMPLATES = [
     text: "Draw 1 card.",
 
     effect: (game, playerIndex) => {
-      if (typeof game.drawCards === "function") {
-        game.drawCards(playerIndex, 1);
-      }
+      game.drawCards(playerIndex, 1);
     },
   },
 
@@ -594,7 +579,7 @@ const SPELL_TEMPLATES = [
     rarity: "uncommon",
     cost: 2,
     type: "spell",
-    text: "Your next combat creature gains +300 ATK.",
+    text: "Your next summoned creature gains +300 ATK permanently.",
 
     effect: (game, playerIndex) => {
       const player = game.players[playerIndex];
@@ -610,7 +595,7 @@ const SPELL_TEMPLATES = [
     rarity: "uncommon",
     cost: 2,
     type: "spell",
-    text: "Your next defensive creature gains +400 DEF.",
+    text: "Your next summoned creature gains +400 DEF permanently.",
 
     effect: (game, playerIndex) => {
       const player = game.players[playerIndex];
@@ -626,12 +611,13 @@ const SPELL_TEMPLATES = [
     rarity: "uncommon",
     cost: 2,
     type: "spell",
-    text: "Prepare your creatures for a swift attack.",
+    text: "Your creatures can attack the turn they are summoned this turn. Does not grant a second attack.",
 
     effect: (game, playerIndex) => {
       const player = game.players[playerIndex];
 
       player.swiftBonus = true;
+      player.field.forEach((slot) => { if (slot) slot.summonSickness = false; });
     },
   },
 
@@ -650,9 +636,7 @@ const SPELL_TEMPLATES = [
     text: "Deal 750 damage directly to your opponent.",
 
     effect: (game, playerIndex) => {
-      const opponent = game.players[1 - playerIndex];
-
-      opponent.lp -= 750;
+      game.dealDamage(1 - playerIndex, 750, "spell");
     },
   },
 
@@ -666,9 +650,7 @@ const SPELL_TEMPLATES = [
     text: "Deal 900 damage directly to your opponent.",
 
     effect: (game, playerIndex) => {
-      const opponent = game.players[1 - playerIndex];
-
-      opponent.lp -= 900;
+      game.dealDamage(1 - playerIndex, 900, "spell");
     },
   },
 
@@ -682,13 +664,9 @@ const SPELL_TEMPLATES = [
     text: "Deal 700 damage directly to your opponent and draw 1 card.",
 
     effect: (game, playerIndex) => {
-      const opponent = game.players[1 - playerIndex];
+      game.dealDamage(1 - playerIndex, 700, "spell");
 
-      opponent.lp -= 700;
-
-      if (typeof game.drawCards === "function") {
-        game.drawCards(playerIndex, 1);
-      }
+      game.drawCards(playerIndex, 1);
     },
   },
 
@@ -704,12 +682,12 @@ const SPELL_TEMPLATES = [
     rarity: "uncommon",
     cost: 2,
     type: "spell",
-    text: "Gain 600 temporary Life Points.",
+    text: "Absorb the next 600 damage until the start of your next turn.",
 
     effect: (game, playerIndex) => {
       const player = game.players[playerIndex];
 
-      player.lp += 600;
+      player.shield = (player.shield || 0) + 600;
     },
   },
 
@@ -723,9 +701,7 @@ const SPELL_TEMPLATES = [
     text: "Gain 1000 Life Points.",
 
     effect: (game, playerIndex) => {
-      const player = game.players[playerIndex];
-
-      player.lp += 1000;
+      game.healPlayer(playerIndex, 1000);
     },
   },
 
@@ -744,9 +720,7 @@ const SPELL_TEMPLATES = [
     text: "Draw 3 cards.",
 
     effect: (game, playerIndex) => {
-      if (typeof game.drawCards === "function") {
-        game.drawCards(playerIndex, 3);
-      }
+      game.drawCards(playerIndex, 3);
     },
   },
 
@@ -760,13 +734,9 @@ const SPELL_TEMPLATES = [
     text: "Lose 300 Life Points and draw 2 cards.",
 
     effect: (game, playerIndex) => {
-      const player = game.players[playerIndex];
+      game.dealDamage(playerIndex, 300, "Dark Bargain", true);
 
-      player.lp -= 300;
-
-      if (typeof game.drawCards === "function") {
-        game.drawCards(playerIndex, 2);
-      }
+      game.drawCards(playerIndex, 2);
     },
   },
 
@@ -785,9 +755,7 @@ const SPELL_TEMPLATES = [
     text: "Deal 1400 damage directly to your opponent.",
 
     effect: (game, playerIndex) => {
-      const opponent = game.players[1 - playerIndex];
-
-      opponent.lp -= 1400;
+      game.dealDamage(1 - playerIndex, 1400, "spell");
     },
   },
 
@@ -801,9 +769,7 @@ const SPELL_TEMPLATES = [
     text: "Deal 1800 damage directly to your opponent.",
 
     effect: (game, playerIndex) => {
-      const opponent = game.players[1 - playerIndex];
-
-      opponent.lp -= 1800;
+      game.dealDamage(1 - playerIndex, 1800, "spell");
     },
   },
 
@@ -817,9 +783,7 @@ const SPELL_TEMPLATES = [
     text: "Restore 1800 Life Points.",
 
     effect: (game, playerIndex) => {
-      const player = game.players[playerIndex];
-
-      player.lp += 1800;
+      game.healPlayer(playerIndex, 1800);
     },
   },
 
@@ -830,9 +794,7 @@ const SPELL_TEMPLATES = [
 // RELICS
 // ============================================================
 //
-// Relics are currently treated as cards.
-// The game engine can later give them persistent battlefield
-// effects rather than immediate spell effects.
+// Relics stay in play and stack their bonuses for existing and future creatures.
 //
 
 const RELIC_TEMPLATES = [
@@ -933,106 +895,12 @@ function createCard(template) {
 // BUILD ONE FULL DECK
 // ============================================================
 //
-// 32-card starter deck:
-//
-//   20 unique monster templates
-//   12 spell/relic cards
-//
-// We deliberately use selected cards rather than putting every
-// card in the database into every deck.
-//
-// This can later become a proper deck-builder.
-//
+// Each duel uses one copy of every card in the 55-card collection.
+// This makes every creature, spell and persistent relic available.
 
 function buildDeckCards() {
-
-  const deck = [];
-
-  // ----------------------------------------------------------
-  // STARTER MONSTERS
-  // ----------------------------------------------------------
-
-  const selectedMonsters = [
-
-    "Ember Whelp",
-    "Cinder Wolf",
-    "Flame Serpent",
-
-    "River Sprite",
-    "Tide Serpent",
-    "Frost Siren",
-
-    "Stone Guardian",
-    "Iron Golem",
-    "Crystal Sentinel",
-
-    "Wind Falcon",
-    "Sky Hunter",
-    "Storm Drake",
-
-    "Dawn Acolyte",
-    "Radiant Knight",
-
-    "Shadow Stalker",
-    "Nightblade",
-
-    "Ironclad Mercenary",
-    "Arcane Automaton",
-
-  ];
-
-  // Two copies of selected monsters.
-  selectedMonsters.forEach((name) => {
-
-    const template = MONSTER_TEMPLATES.find(
-      (card) => card.name === name
-    );
-
-    if (!template) return;
-
-    deck.push(createCard(template));
-
-    deck.push(createCard(template));
-  });
-
-
-  // ----------------------------------------------------------
-  // STARTER SPELLS
-  // ----------------------------------------------------------
-
-  const selectedSpells = [
-
-    "Healing Potion",
-    "Minor Restoration",
-    "Fireball",
-    "Spark",
-    "Quick Draw",
-    "Draw Two",
-
-    "Battle Rage",
-    "Stone Skin",
-
-    "Flame Burst",
-    "Barrier",
-
-    "Lightning Strike",
-    "Dark Bargain",
-
-  ];
-
-  selectedSpells.forEach((name) => {
-
-    const template = SPELL_TEMPLATES.find(
-      (card) => card.name === name
-    );
-
-    if (!template) return;
-
-    deck.push(createCard(template));
-  });
-
-
-  return deck;
+  return [...MONSTER_TEMPLATES, ...SPELL_TEMPLATES, ...RELIC_TEMPLATES]
+    .map(createCard);
 }
 
 
@@ -1204,6 +1072,7 @@ if (typeof module !== "undefined" && module.exports) {
     SPELL_TEMPLATES,
     RELIC_TEMPLATES,
 
+    createCard,
     buildDeck,
     buildSeededDeck,
     getAllCards,

@@ -1,16 +1,22 @@
 {
   "name": "shadow-duel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A simple original two-player card dueling game.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "node tests/browser.cjs",
+    "art:check": "node scripts/build-card-art.cjs --check"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22"
   },
   "dependencies": {
     "express": "^4.19.2",
     "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
   }
 }

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.1.0 — 2026-09-30
+
+- Original SVG illustrations for all 55 cards and a shared card back.
+- Searchable card collection, keyword guide, larger cards, keyboard actions and
+  working card inspection with full artwork.
+- All card templates included in the starter deck; draw effects, monster
+  keywords, relics, shields, pending summon buffs and fair per-player energy fixed.
+- Validated deterministic actions, host/guest readiness, consensual rematches,
+  clean room lifecycle and interrupted-with-no-result disconnect handling.
+- Scoped static serving, graceful server shutdown, reproducible dependency lock
+  and automated rules, artwork, signaling and real-browser verification.
+- Earlier design notes retained in `docs/ROADMAP_ORIGINAL.md`; prior changelog
+  content below is preserved and is not the current rules specification.
+
 ## New Game System
 
 ```text

@@ -87,6 +87,10 @@ function createPlayer() {
 
     maxEnergy: GAME_RULES.startingEnergy,
 
+    turnsStarted: 0,
+
+    shield: 0,
+
 
     // -------------------------
     // Cards
@@ -166,9 +170,9 @@ const game = {
 
   turnNumber: 1,
 
-  phase: "main",
+  phase: "idle",
 
-  gameOver: false,
+  gameOver: true,
 
   winner: null,
 
@@ -183,6 +187,10 @@ const game = {
 };
 
 
+game.drawCards = drawCards;
+game.healPlayer = healPlayer;
+game.dealDamage = dealDamage;
+
 // ============================================================
 // MATCH SESSION
 // ============================================================
@@ -192,7 +200,7 @@ const game = {
 //   local  — both players share this browser (pass-and-play).
 //   online — you control one seat; the peer controls the other.
 //
-// lobby.js configures this through ShadowDuelGame.configure()
+// lobby.js configures this through ShadowDuelGame.startOnline()
 // before starting a match.
 //
 
@@ -241,15 +249,7 @@ function viewSeat() {
 // While applying a peer's action the engine is executing on
 // the peer's behalf, so the seat check is bypassed.
 function isLocalPlayersTurn() {
-
-  if (!isOnline()) return true;
-
-  if (applyingRemoteAction) return true;
-
-  return (
-    !game.gameOver &&
-    game.currentPlayer === session.localSeat
-  );
+  return !game.gameOver && (!isOnline() || applyingRemoteAction || game.currentPlayer === session.localSeat);
 }
 
 
@@ -288,95 +288,86 @@ function dispatchAction(action) {
 
 
 function forfeitLocalPlayer() {
-
-  if (game.gameOver) return;
-
-  if (isOnline() && session.localSeat !== null) {
-
-    const seat = session.localSeat;
-
-    // The surrender travels as a normal game action so both
-    // engines end the match deterministically. The optional
-    // onSurrender callback lets the lobby send a notification
-    // alongside it.
-    if (dispatchAction({ type: "surrender" })) {
-
-      endGame(
-        1 - seat,
-        `${playerName(seat)} surrendered.`
-      );
-
-      render();
-
-      if (typeof session.onSurrender === "function") {
-        session.onSurrender();
-      }
-    }
-
-    return;
-  }
-
-  // Local mode: the active player concedes.
-  endGame(
-    1 - game.currentPlayer,
-    `${playerName(game.currentPlayer)} surrendered.`
-  );
-
-  render();
+  return act({ type: "surrender" });
 }
 
 
 // Applies a validated action received from the peer.
 function applyRemoteAction(action) {
-
-  if (!isOnline() || !action || game.gameOver) return;
-
-  // Surrender can legally arrive during our own turn; every
-  // other action is only valid on the peer's turn.
-  if (
-    action.type !== "surrender" &&
-    game.currentPlayer === session.localSeat
-  ) {
-    // Not the peer's turn — ignore out-of-turn messages.
-    return;
-  }
-
+  if (!isOnline()) return false;
+  const actor = 1 - session.localSeat;
+  if (validateAction(action, actor)) return false;
   applyingRemoteAction = true;
-
-  try {
-
-    switch (action.type) {
-
-      case "play":
-        playCardById(action.cardId);
-        break;
-
-      case "attack":
-        performAttack(action.attacker, action.target);
-        break;
-
-      case "end":
-        endTurn();
-        break;
-
-      case "surrender":
-        endGame(
-          session.localSeat,
-          `${playerName(1 - session.localSeat)} surrendered.`
-        );
-        render();
-        break;
-
-    }
-
-  } finally {
-
-    applyingRemoteAction = false;
-
-  }
-
+  try { return executeAction(action, actor); }
+  finally { applyingRemoteAction = false; }
 }
 
+
+// Shared action contract: both local and remote inputs pass these rules.
+function validSlot(index) {
+  return Number.isInteger(index) && index >= 0 && index < GAME_RULES.fieldSlots;
+}
+
+function playError(card, playerIndex) {
+  const player = game.players[playerIndex];
+  if (!card || !["monster", "spell", "relic"].includes(card.type)) return "Card is not in your hand.";
+  if (player.energy < getCardCost(card)) return `Not enough energy for ${card.name}.`;
+  if (card.type === "monster") {
+    if (player.monsterPlayedThisTurn) return "You may summon only one creature per turn.";
+    if (player.field.every(Boolean)) return "Your field is full.";
+  }
+  return null;
+}
+
+function validateAction(action, actor) {
+  if (game.gameOver) return "The duel has ended.";
+  if (!action || typeof action !== "object" || Array.isArray(action)) return "Invalid action.";
+  if (action.type === "surrender") return null;
+  if (actor !== game.currentPlayer) return "It is not your turn.";
+  if (game.phase !== "main") return "Actions require the main phase.";
+  if (action.type === "end") return null;
+  if (action.type === "play") {
+    if (typeof action.cardId !== "string") return "Invalid card ID.";
+    return playError(game.players[actor].hand.find((card) => card.id === action.cardId), actor);
+  }
+  if (action.type === "attack") {
+    if (!validSlot(action.attacker)) return "Invalid attacker.";
+    const slot = game.players[actor].field[action.attacker];
+    if (!slot || slot.hasAttacked || slot.summonSickness || slot.stunned) return "That creature cannot attack.";
+    const field = game.players[1 - actor].field;
+    if (action.target === null) return field.some(Boolean) ? "Destroy the opposing creatures before attacking directly." : null;
+    if (!validSlot(action.target) || !field[action.target]) return "Choose an opposing creature.";
+    if (field.some((target) => target && hasKeyword(target.card, "guard")) && !hasKeyword(field[action.target].card, "guard")) return "Attack a Guard creature first.";
+    return null;
+  }
+  return "Unknown action.";
+}
+
+function executeAction(action, actor) {
+  if (action.type === "play") playCardById(action.cardId);
+  else if (action.type === "attack") performAttack(action.attacker, action.target);
+  else if (action.type === "end") advanceTurn();
+  else if (action.type === "surrender") {
+    endGame(1 - actor, `${playerName(actor)} surrendered.`);
+    render();
+  }
+  return true;
+}
+
+function act(action) {
+  const actor = isOnline() ? session.localSeat : game.currentPlayer;
+  const error = validateAction(action, actor);
+  if (error) { showNotice(error); return false; }
+  if (!dispatchAction(action)) { showNotice("Action was not sent. Check your connection."); return false; }
+  const result = executeAction(action, actor);
+  if (action.type === "surrender" && typeof session.onSurrender === "function") session.onSurrender();
+  return result;
+}
+
+function showNotice(message) {
+  const element = document.getElementById("combat-message");
+  if (element) element.textContent = message;
+}
 
 // ============================================================
 // LOGGING
@@ -422,24 +413,18 @@ function getPlayer(playerIndex) {
 // SAFE DAMAGE
 // ============================================================
 
-function dealDamage(playerIndex, amount, source = "effect") {
-
-  if (amount <= 0) return;
-
+function dealDamage(playerIndex, amount, source = "effect", bypassShield = false) {
+  if (game.gameOver || !Number.isFinite(amount) || amount <= 0) return 0;
   const player = game.players[playerIndex];
-
-  player.lp -= amount;
-
-  player.damageTaken += amount;
-
-  game.players[1 - playerIndex].damageDealt += amount;
-
-  addLog(
-    `${playerName(playerIndex)} takes ${amount} damage (${source}).`
-  );
-
+  const absorbed = bypassShield ? 0 : Math.min(player.shield, amount);
+  player.shield -= absorbed;
+  const damage = Math.min(player.lp, amount - absorbed);
+  player.lp -= damage;
+  player.damageTaken += damage;
+  if (!bypassShield) game.players[1 - playerIndex].damageDealt += damage;
+  addLog(`${playerName(playerIndex)} takes ${damage} damage (${source}).${absorbed ? ` Barrier absorbs ${absorbed}.` : ""}`);
   checkLifePoints();
-
+  return damage;
 }
 
 
@@ -449,7 +434,7 @@ function dealDamage(playerIndex, amount, source = "effect") {
 
 function healPlayer(playerIndex, amount) {
 
-  if (amount <= 0) return;
+  if (!Number.isFinite(amount) || amount <= 0 || game.players[playerIndex].lp <= 0) return;
 
   const player = game.players[playerIndex];
 
@@ -525,9 +510,7 @@ function endGame(winnerIndex, reason) {
 
   addLog(reason);
 
-  addLog(
-    `${playerName(winnerIndex)} wins!`
-  );
+  addLog(winnerIndex === null ? "Duel interrupted — no result." : `${playerName(winnerIndex)} wins!`);
 
 }
 
@@ -537,6 +520,8 @@ function endGame(winnerIndex, reason) {
 // ============================================================
 
 function drawCards(playerIndex, count) {
+
+  if (game.gameOver || !Number.isInteger(playerIndex) || !game.players[playerIndex] || !Number.isInteger(count) || count < 0) return false;
 
   const player = game.players[playerIndex];
 
@@ -595,16 +580,10 @@ function drawCard(playerIndex) {
 // ============================================================
 
 function refreshEnergy(playerIndex) {
-
   const player = game.players[playerIndex];
-
-  player.maxEnergy = Math.min(
-    GAME_RULES.maxEnergy,
-    Math.max(1, game.turnNumber)
-  );
-
+  player.turnsStarted++;
+  player.maxEnergy = Math.min(GAME_RULES.maxEnergy, player.turnsStarted);
   player.energy = player.maxEnergy;
-
 }
 
 
@@ -616,7 +595,7 @@ function spendEnergy(playerIndex, amount) {
 
   const player = game.players[playerIndex];
 
-  if (amount < 0) return false;
+  if (!Number.isFinite(amount) || amount < 0) return false;
 
   if (player.energy < amount) {
 
@@ -706,55 +685,12 @@ function hasKeyword(card, keyword) {
 // ============================================================
 
 function getMonsterAttack(card, playerIndex = null) {
-
   if (!card) return 0;
-
-  let value = card.atk || 0;
-
-
-  // Player-wide attack bonus.
-
-  if (playerIndex !== null) {
-
-    value +=
-      game.players[playerIndex].attackBonus || 0;
-
-  }
-
-
-  // Element relic bonuses.
-
-  if (
-    playerIndex !== null &&
-    card.element === "flame"
-  ) {
-
-    value +=
-      game.players[playerIndex].flameBonus || 0;
-
-  }
-
-
-  if (
-    playerIndex !== null &&
-    card.element === "shadow"
-  ) {
-
-    value +=
-      game.players[playerIndex].shadowBonus || 0;
-
-  }
-
-
-  // Individual temporary combat bonus.
-
-  if (card.tempAtk) {
-    value += card.tempAtk;
-  }
-
-
+  const player = playerIndex === null ? null : game.players[playerIndex];
+  let value = (card.atk || 0) + (card.bonusAtk || 0) + (card.tempAtk || 0);
+  if (player && card.element === "flame") value += player.flameBonus || 0;
+  if (player && card.element === "shadow") value += player.shadowBonus || 0;
   return Math.max(0, value);
-
 }
 
 
@@ -763,38 +699,10 @@ function getMonsterAttack(card, playerIndex = null) {
 // ============================================================
 
 function getMonsterDefense(card, playerIndex = null) {
-
   if (!card) return 0;
-
-  let value = card.def || 0;
-
-
-  if (playerIndex !== null) {
-
-    value +=
-      game.players[playerIndex].defenseBonus || 0;
-
-  }
-
-
-  if (
-    playerIndex !== null &&
-    card.element === "earth"
-  ) {
-
-    value +=
-      game.players[playerIndex].earthDefenseBonus || 0;
-
-  }
-
-
-  if (card.tempDef) {
-    value += card.tempDef;
-  }
-
-
+  let value = (card.def || 0) + (card.bonusDef || 0) + (card.tempDef || 0);
+  if (playerIndex !== null && card.element === "earth") value += game.players[playerIndex].earthDefenseBonus || 0;
   return Math.max(0, value);
-
 }
 
 
@@ -944,14 +852,28 @@ function playMonster(cardId) {
   player.hand.splice(cardIndex, 1);
 
 
-  const fieldMonster =
-    createFieldMonster(card);
+  card.bonusAtk = player.attackBonus;
+  card.bonusDef = player.defenseBonus;
+  player.attackBonus = 0;
+  player.defenseBonus = 0;
+  const fieldMonster = createFieldMonster(card);
+  if (player.swiftBonus) fieldMonster.summonSickness = false;
 
 
   player.field[emptySlot] =
     fieldMonster;
 
 
+  if (hasKeyword(card, "heal")) healPlayer(playerIndex, 300);
+  if (hasKeyword(card, "debuff")) {
+    game.players[1 - playerIndex].field.forEach((slot) => {
+      if (slot && !hasKeyword(slot.card, "ward")) {
+        slot.card.tempAtk = (slot.card.tempAtk || 0) - 100;
+        slot.card.tempDef = (slot.card.tempDef || 0) - 100;
+      }
+    });
+    addLog(`${card.name} weakens enemies without Ward by 100 ATK / DEF until their next turn.`);
+  }
   player.monsterPlayedThisTurn = true;
 
   player.cardsPlayed++;
@@ -1123,7 +1045,7 @@ function playRelic(cardId) {
   const card = player.hand[cardIndex];
 
 
-  if (card.type !== "relic") return;
+  if (card.type !== "relic" || game.phase !== "main") return;
 
 
   const cost = getCardCost(card);
@@ -1299,7 +1221,7 @@ function performAttack(attackerSlotIndex, targetSlotIndex) {
 
 function selectAttacker(slotIndex) {
 
-  if (game.gameOver) return;
+  if (!isLocalPlayersTurn() || !validSlot(slotIndex)) return;
 
   const player =
     game.players[game.currentPlayer];
@@ -1477,7 +1399,7 @@ function attackDirectly(attackerSlot) {
     );
 
 
-  dealDamage(
+  const actualDamage = dealDamage(
     defenderIndex,
     attackPower,
     `${attackerSlot.card.name} direct attack`
@@ -1493,7 +1415,7 @@ function attackDirectly(attackerSlot) {
 
     applyLifesteal(
       attackerIndex,
-      attackPower
+      actualDamage
     );
 
   }
@@ -1596,9 +1518,10 @@ function attackMonster(defenderSlotIndex) {
     );
 
 
+    let actualDamage = 0;
     if (excess > 0) {
 
-      dealDamage(
+      actualDamage = dealDamage(
         defenderIndex,
         excess,
         "combat overflow"
@@ -1616,7 +1539,7 @@ function attackMonster(defenderSlotIndex) {
 
       applyLifesteal(
         attackerIndex,
-        attackPower
+        actualDamage
       );
 
     }
@@ -1743,42 +1666,8 @@ function attackMonster(defenderSlotIndex) {
 // ============================================================
 
 function attackSlot(defenderSlotIndex) {
-
-  if (game.gameOver) return;
-
-
-  if (!isLocalPlayersTurn()) return;
-
-
-  if (game.selectedAttacker === null) {
-
-    addLog(
-      "Select one of your monsters first."
-    );
-
-    return;
-  }
-
-
-  const attacker = game.selectedAttacker;
-
-  const target =
-    defenderSlotIndex === null ||
-    defenderSlotIndex === undefined
-      ? null
-      : defenderSlotIndex;
-
-
-  if (
-    dispatchAction({
-      type: "attack",
-      attacker,
-      target,
-    })
-  ) {
-    performAttack(attacker, target);
-  }
-
+  if (game.selectedAttacker === null) { showNotice("Select one of your creatures first."); return false; }
+  return act({ type: "attack", attacker: game.selectedAttacker, target: defenderSlotIndex });
 }
 
 
@@ -1809,11 +1698,8 @@ function startTurn() {
   player.hasDrawnThisTurn = false;
 
 
-  player.attackBonus = 0;
-
-  player.defenseBonus = 0;
-
   player.swiftBonus = false;
+  player.shield = 0;
 
 
   // ----------------------------------------------------------
@@ -1849,9 +1735,9 @@ function startTurn() {
 
       // Temporary creature bonuses expire.
 
-      slot.tempAtk = 0;
+      slot.card.tempAtk = 0;
 
-      slot.tempDef = 0;
+      slot.card.tempDef = 0;
 
     }
   );
@@ -1886,71 +1772,17 @@ function startTurn() {
 // ============================================================
 
 function endTurn() {
+  return act({ type: "end" });
+}
 
-  if (game.gameOver) return;
-
-  if (!isLocalPlayersTurn()) return;
-
-  // Online: hand the action to the peer first; both browsers
-  // then run the identical end-turn sequence.
-  if (!dispatchAction({ type: "end" })) return;
-
-
-  if (
-    game.selectedAttacker !== null
-  ) {
-
-    game.selectedAttacker = null;
-
-  }
-
-
-  game.phase = "end";
-
-
-  const oldPlayer =
-    game.currentPlayer;
-
-
-  // ----------------------------------------------------------
-  // End-of-turn effects
-  // ----------------------------------------------------------
-
-  game.players[oldPlayer].field.forEach(
-    (slot) => {
-
-      if (!slot) return;
-
-      if (slot.burn > 0) {
-
-        applyBurn(
-          oldPlayer,
-          slot.burn
-        );
-
-      }
-
-    }
-  );
-
-
-  // ----------------------------------------------------------
-  // Change player
-  // ----------------------------------------------------------
-
-  game.currentPlayer =
-    1 - game.currentPlayer;
-
-
-  game.turnNumber++;
-
-
-  startTurn();
-
+function advanceTurn() {
+  game.selectedAttacker = null;
   game.selectedCard = null;
-
+  game.currentPlayer = 1 - game.currentPlayer;
+  game.turnNumber++;
+  closeDetails();
+  startTurn();
   render();
-
 }
 
 
@@ -1993,6 +1825,7 @@ function resetGameState() {
 
 function restartGame() {
 
+  closeDetails();
   resetGameState();
 
   startGame();
@@ -2060,6 +1893,7 @@ function startGame() {
 
 
   refreshEnergy(0);
+  game.players[0].hasDrawnThisTurn = true;
 
 
   addLog(
@@ -2086,116 +1920,98 @@ function startGame() {
 // CARD DISPLAY
 // ============================================================
 
-function cardEl(card, extraClass) {
-
-  const div =
-    document.createElement("div");
-
-
-  div.className =
-    `card ${card.type} ${extraClass || ""}`;
-
-
-  // ----------------------------------------------------------
-  // Monster
-  // ----------------------------------------------------------
-
-  if (card.type === "monster") {
-
-    const keywords =
-      Array.isArray(card.keywords)
-        ? card.keywords.join(" • ")
-        : "";
-
-
-    div.innerHTML = `
-
-      <div class="card-cost">
-        ${card.cost ?? 0}
-      </div>
-
-      <div class="card-element">
-        ${card.element || "neutral"}
-      </div>
-
-      <div class="card-icon">
-        ${card.icon}
-      </div>
-
-      <div class="card-name">
-        ${card.name}
-      </div>
-
-      <div class="card-rarity">
-        ${card.rarity || "common"}
-      </div>
-
-      <div class="card-text">
-        ${card.text || ""}
-      </div>
-
-      <div class="card-keywords">
-        ${keywords}
-      </div>
-
-      <div class="card-stats">
-        ${getMonsterAttack(card)} / ${getMonsterDefense(card)}
-      </div>
-
-    `;
-
-  }
-
-
-  // ----------------------------------------------------------
-  // Spell / Relic
-  // ----------------------------------------------------------
-
-  else {
-
-    const keywords =
-      Array.isArray(card.keywords)
-        ? card.keywords.join(" • ")
-        : "";
-
-
-    div.innerHTML = `
-
-      <div class="card-cost">
-        ${card.cost ?? 0}
-      </div>
-
-      <div class="card-element">
-        ${card.element || "neutral"}
-      </div>
-
-      <div class="card-icon">
-        ${card.icon}
-      </div>
-
-      <div class="card-name">
-        ${card.name}
-      </div>
-
-      <div class="card-rarity">
-        ${card.rarity || "common"}
-      </div>
-
-      <div class="card-text">
-        ${card.text || ""}
-      </div>
-
-      <div class="card-keywords">
-        ${keywords}
-      </div>
-
-    `;
-
-  }
-
-
+function cardEl(card, extraClass, playerIndex = null) {
+  const div = document.createElement("div");
+  const type = card.type || "monster";
+  div.className = `card ${type} ${extraClass || ""}`;
+  div.dataset.cardId = card.id || "";
+  div.dataset.cardName = card.name;
+  div.dataset.cardType = type;
+  div.dataset.element = card.element || "neutral";
+  div.setAttribute("role", "button");
+  div.tabIndex = 0;
+  div.setAttribute("aria-label", `${card.name}, ${type}, ${getCardCost(card)} energy. Press I for details.`);
+  const src = window.ShadowCardArt && window.ShadowCardArt.src(card);
+  const art = src
+    ? `<div class="card-icon"><img class="card-art" src="${escapeHTML(src)}" alt="${escapeHTML(card.name)} artwork" loading="lazy" draggable="false"></div>`
+    : `<div class="card-icon" aria-hidden="true">${escapeHTML(card.icon || "◆")}</div>`;
+  div.innerHTML = `
+    <div class="card-cost" title="Energy cost">${getCardCost(card)}</div>
+    <div class="card-element">${escapeHTML(card.element || "neutral")}</div>
+    ${art}
+    <div class="card-name">${escapeHTML(card.name)}</div>
+    <div class="card-rarity">${escapeHTML(card.rarity || "common")}</div>
+    <div class="card-text">${escapeHTML(card.text || "")}</div>
+    <div class="card-keywords">${escapeHTML((card.keywords || []).join(" • "))}</div>
+    ${type === "monster" ? `<div class="card-stats"><span title="Attack">${getMonsterAttack(card, playerIndex)} ATK</span> / <span title="Defense">${getMonsterDefense(card, playerIndex)} DEF</span></div>` : ""}
+  `;
+  const info = document.createElement("button");
+  info.type = "button";
+  info.className = "card-info-button card-inspect";
+  info.textContent = "i";
+  info.setAttribute("aria-label", `Inspect ${card.name}`);
+  info.setAttribute("aria-disabled", "false");
+  info.onclick = (event) => { event.stopPropagation(); showCardDetails(card); };
+  div.appendChild(info);
+  div.onclick = () => showCardDetails(card);
+  div.oncontextmenu = (event) => { event.preventDefault(); event.stopPropagation(); showCardDetails(card); };
+  div.onkeydown = (event) => {
+    if (event.target !== div) return;
+    if (event.key === "i" || event.key === "I") { event.preventDefault(); showCardDetails(card); }
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); div.click(); }
+  };
   return div;
+}
 
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+}
+
+const KEYWORD_RULES = {
+  guard: "Guard: opposing attacks must target a Guard creature while one is present.",
+  swift: "Swift: can attack on the turn it is summoned.",
+  heal: "Heal: restore 300 Life Points when summoned.",
+  burn: "Burn: deal 200 additional Life Point damage after a direct attack or a winning creature attack.",
+  debuff: "Debuff: when summoned, enemy creatures without Ward lose 100 ATK and DEF until their controller's next turn.",
+  ward: "Ward: immune to hostile creature effects such as Debuff; does not prevent combat damage.",
+  lifesteal: "Lifesteal: restore Life Points equal to the combat damage actually dealt to the opponent's Life Points (before Burn).",
+};
+
+function showCardDetails(card) {
+  if (!card || typeof card.name !== "string") return;
+  const panel = document.getElementById("card-detail-panel");
+  const content = document.getElementById("card-detail-content");
+  if (!panel || !content) return;
+  content.innerHTML = "";
+  const owner = game.players.findIndex((player) => player.field.some((slot) => slot && slot.card.id === card.id));
+  const display = cardEl(card, "detail-card", owner < 0 ? null : owner);
+  display.removeAttribute("role");
+  display.tabIndex = -1;
+  display.onclick = null;
+  display.onkeydown = null;
+  const info = display.querySelector(".card-info-button");
+  if (info) info.remove();
+  content.appendChild(display);
+  (card.keywords || []).forEach((keyword) => {
+    const line = document.createElement("p");
+    line.className = "keyword-rule";
+    line.textContent = KEYWORD_RULES[keyword] || keyword;
+    content.appendChild(line);
+  });
+  if ((card.type || "monster") === "monster") {
+    const line = document.createElement("p");
+    line.textContent = "One creature summon per turn. Compare attacking ATK to defending DEF; the loser is destroyed and the difference damages its controller. A tie destroys both. Direct attacks require an empty opposing field.";
+    content.appendChild(line);
+  }
+  panel.classList.remove("hidden");
+  panel.setAttribute("aria-hidden", "false");
+  const close = document.getElementById("close-card-detail");
+  if (close) close.focus();
+}
+
+function closeDetails() {
+  const panel = document.getElementById("card-detail-panel");
+  if (panel) { panel.classList.add("hidden"); panel.setAttribute("aria-hidden", "true"); }
 }
 
 
@@ -2225,7 +2041,7 @@ function renderOpponentInfo() {
 
   element.textContent =
     `${playerName(opp)} — `
-    + `${opponent.lp} LP `
+    + `${opponent.lp} LP${opponent.shield ? ` + ${opponent.shield} shield` : ""} `
     + `(${opponent.deck.length} cards left)`;
 
 }
@@ -2255,7 +2071,7 @@ function renderPlayerInfo() {
 
   element.textContent =
     `${playerName(seat)} — `
-    + `${player.lp} LP `
+    + `${player.lp} LP${player.shield ? ` + ${player.shield} shield` : ""} `
     + `(${player.deck.length} cards left) `
     + `— Energy ${player.energy}/${player.maxEnergy}`;
 
@@ -2333,89 +2149,37 @@ function renderOpponentHand() {
 // ============================================================
 
 function renderOpponentField() {
-
-  const opp =
-    1 - viewSeat();
-
-
-  const oppField =
-    document.getElementById(
-      "opponent-field"
-    );
-
-
-  if (!oppField) return;
-
-
-  oppField.innerHTML = "";
-
-
-  game.players[opp].field.forEach(
-    (slot, index) => {
-
-      const zone =
-        document.createElement("div");
-
-
-      zone.className =
-        "zone";
-
-
-      if (slot) {
-
-        const card =
-          cardEl(
-            slot.card
-          );
-
-
-        if (slot.stunned) {
-          card.classList.add("stunned");
-        }
-
-
-        zone.appendChild(
-          card
-        );
-
-      } else {
-
-        zone.classList.add(
-          "empty"
-        );
-
-      }
-
-
-      // ------------------------------------------------------
-      // Attack targeting
-      // ------------------------------------------------------
-
-      if (
-        game.selectedAttacker !== null &&
-        isLocalPlayersTurn()
-      ) {
-
-        zone.classList.add(
-          "targetable"
-        );
-
-
-        zone.onclick =
-          () => attackSlot(
-            slot ? index : null
-          );
-
-      }
-
-
-      oppField.appendChild(
-        zone
-      );
-
+  const opp = 1 - viewSeat();
+  const field = document.getElementById("opponent-field");
+  if (!field) return;
+  field.innerHTML = "";
+  game.players[opp].field.forEach((slot, index) => {
+    const zone = document.createElement("div");
+    zone.className = "zone";
+    zone.dataset.slot = index;
+    const target = slot ? index : null;
+    const targeting = game.selectedAttacker !== null && isLocalPlayersTurn();
+    const legal = targeting && !validateAction({ type: "attack", attacker: game.selectedAttacker, target }, game.currentPlayer);
+    if (slot) {
+      const card = cardEl(slot.card, slot.stunned ? "stunned" : "", opp);
+      card.onclick = (event) => { event.stopPropagation(); if (targeting) attackSlot(target); else showCardDetails(slot.card); };
+      zone.appendChild(card);
+    } else {
+      zone.classList.add("empty");
+      zone.textContent = legal ? "Attack directly" : "Empty zone";
     }
-  );
-
+    if (legal) {
+      zone.classList.add("targetable");
+      zone.onclick = () => attackSlot(target);
+      if (!slot) {
+        zone.tabIndex = 0;
+        zone.setAttribute("role", "button");
+        zone.setAttribute("aria-label", "Attack opponent directly");
+        zone.onkeydown = (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); zone.click(); } };
+      }
+    }
+    field.appendChild(zone);
+  });
 }
 
 
@@ -2424,98 +2188,35 @@ function renderOpponentField() {
 // ============================================================
 
 function renderPlayerField() {
-
   const seat = viewSeat();
-
   const myTurn = isLocalPlayersTurn();
-
-
-  const playerField =
-    document.getElementById(
-      "player-field"
-    );
-
-
-  if (!playerField) return;
-
-
-  playerField.innerHTML = "";
-
-
-  game.players[seat].field.forEach(
-    (slot, index) => {
-
-      const zone =
-        document.createElement("div");
-
-
-      zone.className =
-        "zone";
-
-
-      if (slot) {
-
-        const el =
-          cardEl(
-            slot.card
-          );
-
-
-        if (
-          slot.summonSickness ||
-          slot.hasAttacked ||
-          slot.stunned ||
-          !myTurn
-        ) {
-
-          el.classList.add(
-            "dimmed"
-          );
-
-        }
-
-
-        if (
-          game.selectedAttacker === index
-        ) {
-
-          el.classList.add(
-            "selected"
-          );
-
-        }
-
-
-        if (myTurn) {
-
-          el.onclick =
-            () => selectAttacker(
-              index
-            );
-
-        }
-
-
-        zone.appendChild(
-          el
-        );
-
-      } else {
-
-        zone.classList.add(
-          "empty"
-        );
-
-      }
-
-
-      playerField.appendChild(
-        zone
-      );
-
+  const field = document.getElementById("player-field");
+  if (!field) return;
+  field.innerHTML = "";
+  game.players[seat].field.forEach((slot, index) => {
+    const zone = document.createElement("div");
+    zone.className = "zone";
+    zone.dataset.slot = index;
+    if (slot) {
+      const el = cardEl(slot.card, "", seat);
+      const tired = slot.summonSickness || slot.hasAttacked || slot.stunned || !myTurn;
+      if (tired) el.classList.add("dimmed");
+      if (game.selectedAttacker === index) el.classList.add("selected");
+      const badge = document.createElement("div");
+      badge.className = "card-state";
+      badge.textContent = slot.hasAttacked ? "Attacked" : slot.stunned ? "Stunned" : slot.summonSickness ? "Summoning" : myTurn ? "Ready" : "Waiting";
+      el.appendChild(badge);
+      el.onclick = () => {
+        if (!myTurn || tired) showCardDetails(slot.card);
+        else selectAttacker(index);
+      };
+      zone.appendChild(el);
+    } else {
+      zone.classList.add("empty");
+      zone.textContent = "Empty zone";
     }
-  );
-
+    field.appendChild(zone);
+  });
 }
 
 
@@ -2524,97 +2225,61 @@ function renderPlayerField() {
 // ============================================================
 
 function renderPlayerHand() {
-
   const seat = viewSeat();
+  const player = game.players[seat];
+  const hand = document.getElementById("player-hand");
+  if (!hand) return;
+  hand.innerHTML = "";
+  player.hand.forEach((card) => {
+    const playable = isLocalPlayersTurn() && !playError(card, seat);
+    const el = cardEl(card, playable ? "playable" : "unplayable");
+    el.setAttribute("aria-disabled", String(!playable));
+    el.onclick = () => act({ type: "play", cardId: card.id });
+    hand.appendChild(el);
+  });
+}
 
-  const myTurn = isLocalPlayersTurn();
-
-
-  const player =
-    game.players[seat];
-
-
-  const playerHand =
-    document.getElementById(
-      "player-hand"
-    );
-
-
-  if (!playerHand) return;
-
-
-  playerHand.innerHTML = "";
-
-
-  player.hand.forEach(
-    (card) => {
-
-      const cost =
-        getCardCost(card);
-
-
-      const playable =
-        myTurn &&
-        player.energy >= cost;
-
-
-      const el =
-        cardEl(
-          card,
-          playable
-            ? "playable"
-            : "unplayable"
-        );
-
-
-      el.onclick =
-        () => {
-
-          if (!myTurn) {
-
-            addLog(
-              isOnline()
-                ? "Waiting for your opponent…"
-                : "It is not your turn."
-            );
-
-            render();
-
-            return;
-          }
-
-
-          if (!playable) {
-
-            addLog(
-              `Not enough energy for ${card.name}.`
-            );
-
-            render();
-
-            return;
-          }
-
-
-          if (
-            dispatchAction({
-              type: "play",
-              cardId: card.id,
-            })
-          ) {
-            playCardById(card.id);
-          }
-
-        };
-
-
-      playerHand.appendChild(
-        el
-      );
-
+function renderRelics() {
+  const seat = viewSeat();
+  [["player-relics", seat], ["opponent-relics", 1 - seat]].forEach(([id, owner]) => {
+    const row = document.getElementById(id);
+    if (!row) return;
+    row.innerHTML = "";
+    game.players[owner].relics.forEach((card) => row.appendChild(cardEl(card, "relic-active")));
+    if (!game.players[owner].relics.length) {
+      const empty = document.createElement("span");
+      empty.className = "relic-empty";
+      empty.textContent = "No active relics";
+      row.appendChild(empty);
     }
-  );
+  });
+}
 
+function renderResources() {
+  const player = game.players[viewSeat()];
+  const opponent = game.players[1 - viewSeat()];
+  const values = {
+    "energy-display": `${player.energy} / ${player.maxEnergy}`,
+    "player-energy": `${player.energy} / ${player.maxEnergy}`,
+    "player-deck": player.deck.length,
+    "player-life": player.lp,
+    "player-deck-count": player.deck.length,
+    "opponent-deck-count": opponent.deck.length,
+    "player-hand-count": player.hand.length,
+    "opponent-hand-count": opponent.hand.length,
+    "player-hand-count-label": `${player.hand.length} CARDS`,
+    "opponent-hand-count-label": `${opponent.hand.length} CARDS`,
+    "phase-info": game.gameOver ? "DUEL COMPLETE" : "MAIN PHASE",
+    "combat-message": game.phase === "idle" ? "Start a duel to play" : game.gameOver ? (game.winner === null ? "Duel interrupted — no result." : `${playerName(game.winner)} wins!`) : !isLocalPlayersTurn() ? "Waiting for your opponent" : game.selectedAttacker !== null ? "Choose a highlighted target" : "Play a card or select a ready creature",
+  };
+  Object.entries(values).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  });
+  const lifeBar = document.getElementById("player-life-bar");
+  if (lifeBar) lifeBar.style.width = `${Math.max(0, Math.min(100, player.lp / GAME_RULES.startingLP * 100))}%`;
+  const end = document.getElementById("end-turn-btn");
+  if (end) end.disabled = !isLocalPlayersTurn();
 }
 
 
@@ -2623,24 +2288,14 @@ function renderPlayerHand() {
 // ============================================================
 
 function renderLog() {
-
-  const log =
-    document.getElementById(
-      "log"
-    );
-
-
+  const log = document.getElementById("log");
   if (!log) return;
-
-
-  log.innerHTML =
-    game.log
-      .map(
-        (line) =>
-          `<div>${line}</div>`
-      )
-      .join("");
-
+  log.innerHTML = "";
+  game.log.forEach((line) => {
+    const row = document.createElement("div");
+    row.textContent = line;
+    log.appendChild(row);
+  });
 }
 
 
@@ -2659,7 +2314,7 @@ function renderGameOver() {
   if (!overlay) return;
 
 
-  if (game.gameOver) {
+  if (game.gameOver && game.phase !== "idle") {
 
     const text =
       document.getElementById(
@@ -2670,7 +2325,7 @@ function renderGameOver() {
     if (text) {
 
       text.textContent =
-        `${playerName(game.winner)} wins!`;
+        game.winner === null ? "Duel interrupted — no result." : `${playerName(game.winner)} wins!`;
 
     }
 
@@ -2712,6 +2367,10 @@ function render() {
 
   renderPlayerHand();
 
+  renderRelics();
+
+  renderResources();
+
   renderLog();
 
   renderGameOver();
@@ -2732,6 +2391,12 @@ function render() {
 // ============================================================
 // BUTTON EVENTS
 // ============================================================
+
+const closeDetailButton = document.getElementById("close-card-detail");
+if (closeDetailButton) closeDetailButton.addEventListener("click", closeDetails);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { closeDetails(); game.selectedAttacker = null; render(); }
+});
 
 const endTurnButton =
   document.getElementById(
@@ -2761,9 +2426,9 @@ if (restartButton) {
     "click",
     () => {
 
-      // In online mode rematches are coordinated by the host
-      // through lobby.js — this button is hidden there.
-      restartGame();
+      // Online rematches are coordinated by lobby.js; only local
+      // matches restart directly from this button.
+      if (!isOnline()) restartGame();
 
     }
   );
@@ -2812,6 +2477,8 @@ window.ShadowDuelGame = {
 
   startOnline(options = {}) {
 
+    if (!Number.isFinite(options.seed)) return false;
+
     session.mode = "online";
 
     session.localSeat =
@@ -2851,7 +2518,7 @@ window.ShadowDuelGame = {
   // Remote peer action entry point (wired by lobby.js).
   receiveAction(action) {
 
-    applyRemoteAction(action);
+    return applyRemoteAction(action);
 
   },
 
@@ -2862,8 +2529,8 @@ window.ShadowDuelGame = {
     if (!isOnline() || game.gameOver) return;
 
     endGame(
-      session.localSeat,
-      `${playerName(1 - session.localSeat)} left the duel.`
+      null,
+      `Connection to ${playerName(1 - session.localSeat)} was lost. No winner is awarded.`
     );
 
     render();
@@ -2877,10 +2544,41 @@ window.ShadowDuelGame = {
 
   surrender() {
 
-    forfeitLocalPlayer();
+    return forfeitLocalPlayer();
 
   },
 
+
+  act,
+  stop() {
+    closeDetails();
+    session.mode = "local";
+    session.localSeat = null;
+    session.seed = null;
+    session.onAction = null;
+    session.onSurrender = null;
+    session.onOpponentLeft = null;
+    resetGameState();
+    game.gameOver = true;
+    game.phase = "idle";
+    renderGameOver();
+  },
+  inspect: showCardDetails,
+  closeDetails,
+  canPlay(cardId) {
+    return !validateAction({ type: "play", cardId }, isOnline() ? session.localSeat : game.currentPlayer);
+  },
+  rules() { return { ...GAME_RULES, keywordDescriptions: { ...KEYWORD_RULES } }; },
+  snapshot() {
+    return JSON.parse(JSON.stringify({
+      players: game.players,
+      currentPlayer: game.currentPlayer,
+      turnNumber: game.turnNumber,
+      phase: game.phase,
+      gameOver: game.gameOver,
+      winner: game.winner,
+    }));
+  },
 
   // ----------------------------------------------------------
   // State access
@@ -2932,6 +2630,7 @@ window.ShadowDuelGame = {
 
   draw(player, amount = 1) {
 
+    if (isOnline()) return false;
     return drawCards(
       player,
       amount
@@ -2949,6 +2648,7 @@ window.ShadowDuelGame = {
 
   restart() {
 
+    if (isOnline()) return false;
     return restartGame();
 
   },
@@ -2970,11 +2670,10 @@ window.ShadowDuel = window.ShadowDuelGame;
 // into a local duel so the page always works standalone.
 //
 
-if (typeof window.ShadowLobbyUI === "undefined") {
+if (typeof window.ShadowLobbyUI === "undefined" && !document.getElementById("lobby-overlay")) {
 
   window.ShadowDuelGame.startLocal();
 
 }
 
 })();
-
