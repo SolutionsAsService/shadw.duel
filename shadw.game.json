@@ -1,0 +1,9 @@
+{
+  "game": "shadow-duel",
+  "name": "Shadow Duel",
+  "engine": { "name": "none" },
+  "test": { "command": ["node", "scripts/bot-match.cjs", "--seed", "1", "--matches", "20"], "timeout": "120s", "memory": "512Mi" },
+  "keys": { "tiers": ["dev", "beta", "retail"], "device_limit": 3 },
+  "deploy": { "web": ".", "server": { "protocol": "ws", "port": 3000, "max_players": 2 } },
+  "cyber": { "staging": true, "drills": ["forged-entitlement", "replay", "modded-client"] }
+}
