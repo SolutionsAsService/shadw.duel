@@ -215,8 +215,11 @@ const session = {
   // Display names shown in the UI.
   playerNames: ["Player 1", "Player 2"],
 
-  // Deterministic match seed (online mode).
+  // Deterministic match seed (online mode, or a seeded local duel).
   seed: null,
+
+  // Seat played by ShadowDuelBot in a local duel against the computer, else null.
+  botSeat: null,
 
   // Callbacks wired by lobby.js (online mode only).
   onAction: null,       // (action) => {}        send game action
@@ -239,9 +242,9 @@ function isOnline() {
 // The player index whose cards we see face-up and control.
 function viewSeat() {
 
-  return isOnline()
-    ? session.localSeat
-    : game.currentPlayer;
+  if (isOnline()) return session.localSeat;
+  if (session.botSeat !== null) return 1 - session.botSeat;
+  return game.currentPlayer;
 }
 
 
@@ -249,7 +252,9 @@ function viewSeat() {
 // While applying a peer's action the engine is executing on
 // the peer's behalf, so the seat check is bypassed.
 function isLocalPlayersTurn() {
-  return !game.gameOver && (!isOnline() || applyingRemoteAction || game.currentPlayer === session.localSeat);
+  if (game.gameOver) return false;
+  if (isOnline()) return applyingRemoteAction || game.currentPlayer === session.localSeat;
+  return session.botSeat === null || botActing || game.currentPlayer !== session.botSeat;
 }
 
 
@@ -1783,6 +1788,7 @@ function advanceTurn() {
   closeDetails();
   startTurn();
   render();
+  scheduleBot();
 }
 
 
@@ -1830,6 +1836,74 @@ function restartGame() {
 
   startGame();
 
+  scheduleBot();
+
+}
+
+
+// ============================================================
+// COMPUTER OPPONENT
+// ============================================================
+//
+// Every action a seat could take now, each already passed through
+// validateAction, with the combat numbers a player would read off
+// the board. ShadowDuelBot (bot.js) picks from this list, so the bot
+// can never take an action a human could not.
+
+function legalActions() {
+  const seat = game.currentPlayer;
+  const me = game.players[seat];
+  const them = game.players[1 - seat];
+  const out = [];
+  const ok = (action) => !validateAction(action, seat);
+  for (const card of me.hand) {
+    const action = { type: "play", cardId: card.id };
+    if (ok(action)) out.push({ action, card });
+  }
+  me.field.forEach((slot, attacker) => {
+    if (!slot) return;
+    const atk = getMonsterAttack(slot.card, seat);
+    const direct = { type: "attack", attacker, target: null };
+    if (ok(direct)) out.push({ action: direct, atk });
+    them.field.forEach((target, index) => {
+      const action = { type: "attack", attacker, target: index };
+      if (target && ok(action)) {
+        out.push({
+          action, atk,
+          targetAtk: getMonsterAttack(target.card, 1 - seat),
+          targetDef: getMonsterDefense(target.card, 1 - seat),
+        });
+      }
+    });
+  });
+  if (ok({ type: "end" })) out.push({ action: { type: "end" } });
+  return out;
+}
+
+let botTimer = null;
+let botActing = false;
+
+// Paces the bot in the browser; headless matches call the bot directly instead.
+function scheduleBot() {
+  if (botTimer !== null || typeof setTimeout !== "function") return;
+  if (isOnline() || session.botSeat === null || game.gameOver || game.currentPlayer !== session.botSeat) return;
+  botTimer = setTimeout(botStep, 650);
+}
+
+function botStep() {
+  botTimer = null;
+  const bot = window.ShadowDuelBot;
+  if (isOnline() || session.botSeat === null || game.gameOver || game.currentPlayer !== session.botSeat) return;
+  // Without bot.js the bot passes, so the duel never stalls on its turn.
+  const choice = bot ? bot.choose(game, legalActions(), session.botRng || (session.botRng = bot.rng())) : { type: "end" };
+  botActing = true;
+  try {
+    if (!act(choice) && !act({ type: "end" })) return;
+  } finally {
+    botActing = false;
+  }
+  render();
+  scheduleBot();
 }
 
 
@@ -1846,7 +1920,7 @@ function startGame() {
   // seed so every card id is identical on both browsers.
   // ----------------------------------------------------------
 
-  if (isOnline() && Number.isFinite(session.seed)) {
+  if (Number.isFinite(session.seed)) {
 
     game.players[0].deck =
       buildSeededDeck(session.seed, 0);
@@ -2461,7 +2535,10 @@ window.ShadowDuelGame = {
       options.name1 || "Player 2",
     ];
 
-    session.seed = null;
+    // A finite seed gives both decks from it, as online, so a local duel can be replayed.
+    session.seed = Number.isFinite(options.seed) ? options.seed >>> 0 : null;
+
+    session.botSeat = options.botSeat === 0 || options.botSeat === 1 ? options.botSeat : null;
 
     session.onAction = null;
 
@@ -2483,6 +2560,8 @@ window.ShadowDuelGame = {
 
     session.localSeat =
       options.localSeat === 1 ? 1 : 0;
+
+    session.botSeat = null;
 
     session.playerNames = [
       options.name0 || "Player 1",
@@ -2555,6 +2634,9 @@ window.ShadowDuelGame = {
     session.mode = "local";
     session.localSeat = null;
     session.seed = null;
+    session.botSeat = null;
+    session.botRng = null;
+    if (botTimer !== null) { clearTimeout(botTimer); botTimer = null; }
     session.onAction = null;
     session.onSurrender = null;
     session.onOpponentLeft = null;
@@ -2603,6 +2685,9 @@ window.ShadowDuelGame = {
     return isOnline();
 
   },
+
+
+  legalActions,
 
 
   isMyTurn() {

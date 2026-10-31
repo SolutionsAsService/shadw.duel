@@ -46,7 +46,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 test('HTTP exposes the application and health but not repository files', async t => {
   const { url } = await service(t);
-  for (const route of ['/', '/?lobby=ABCD', '/index.html', '/network.js', '/lobby.js', '/cards.js', '/game.js', '/style.css']) {
+  for (const route of ['/', '/?lobby=ABCD', '/index.html', '/network.js', '/lobby.js', '/cards.js', '/bot.js', '/game.js', '/style.css']) {
     const response = await fetch(url + route); assert.equal(response.status, 200, route);
   }
   assert.deepEqual(await (await fetch(url + '/health')).json(), { status: 'ok' });

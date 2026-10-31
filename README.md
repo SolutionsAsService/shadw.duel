@@ -21,6 +21,8 @@ dependencies, tests or private files.
 ## Play
 
 - **Local Duel:** two players share a device; End Turn switches the active hand.
+- **Vs Computer:** play the Shadow Bot. You always see your own hand; the bot plays
+  its turn at a readable pace and only ever takes actions the rules allow.
 - **Create / Join Lobby:** share the four-character code or invite link. The guest
   marks Ready, then the host starts. Both browsers need the same running server.
 - **Cards:** explore the complete searchable collection, filter by type/element,
@@ -77,6 +79,23 @@ Restrictive NATs or firewalls can prevent a direct connection. Local two-browser
 checks do not establish universal internet connectivity. The error state and
 return-to-menu path remain usable if negotiation fails.
 
+## Computer opponent and headless matches
+
+`bot.js` is a greedy, seeded bot. It picks only from the engine's `legalActions()`
+(every action that passes `validateAction`), preferring direct attacks, then attacks
+that destroy a creature without losing the attacker, then summons, then spells and
+relics, then even trades. It never makes a losing attack. Local duels accept a seed,
+so a seeded duel deals the same decks every time.
+
+```sh
+npm run match -- --seed 1 --matches 20
+```
+
+plays bot-against-bot matches on the real rules engine with no browser. The same
+seed replays the same match and log hash. When `SHADW_ARTIFACT_DIR` is set, as in a
+SHADW Forge run, each match is written there as `match-<seed>.json` with a
+`summary.json`. Seeds 1–20 all finish, in 19.5 turns on average.
+
 ## Verification
 
 ```sh
@@ -95,6 +114,7 @@ checks. See [verification receipts](docs/VERIFICATION.md) for completed evidence
 ## Maintain
 
 - `cards.js`: templates, effects, deterministic decks.
+- `bot.js`, `scripts/bot-match.cjs`: computer opponent and headless matches.
 - `game.js`: rules, validation and card/board rendering.
 - `network.js`, `lobby.js`, `server.js`: peer protocol and room lifecycle.
 - `card-art.js`, `assets/`, `scripts/build-card-art.cjs`: original vector artwork.

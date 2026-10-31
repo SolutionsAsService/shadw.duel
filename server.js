@@ -9,7 +9,7 @@ const { WebSocketServer, WebSocket } = require("ws");
 const LOBBY_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const MAX_MESSAGE_BYTES = 64 * 1024;
 const PUBLIC_FILES = new Set([
-  "index.html", "style.css", "cards.js", "card-art.js", "network.js",
+  "index.html", "style.css", "cards.js", "card-art.js", "bot.js", "network.js",
   "game.js", "lobby.js", "duel-ui.js", "duel-ui.css",
 ]);
 

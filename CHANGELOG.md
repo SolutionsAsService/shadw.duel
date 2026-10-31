@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.2.0 — 2026-10-30
+
+- **Vs Computer:** a seeded, greedy Shadow Bot (`bot.js`) that picks only from the
+  engine's new `legalActions()`. The human's hand stays in view and End Turn is
+  disabled during the bot's turn; the bot passes rather than stalls if its script
+  is missing.
+- Local duels accept a seed, giving the same decks as an online match with it.
+- `npm run match`: headless bot-vs-bot matches with reproducible log hashes, writing
+  results to `SHADW_ARTIFACT_DIR` for SHADW Forge runs.
+- `.gitattributes` keeps text files LF, so the generated-artwork check passes on
+  Windows checkouts.
+
 ## 1.1.0 — 2026-09-30
 
 - Original SVG illustrations for all 55 cards and a shared card back.

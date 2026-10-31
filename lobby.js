@@ -60,7 +60,7 @@
     const playing = lobby.screen === "playing";
     const end = el("end-turn-btn");
     if (end) {
-      end.disabled = !playing || ended || (online && (!net().isConnected() || !game().isMyTurn()));
+      end.disabled = !playing || ended || !game().isMyTurn() || (online && !net().isConnected());
       end.title = end.disabled ? "Waiting for your turn" : "End your turn";
     }
     if (el("surrender-btn")) el("surrender-btn").disabled = !playing || ended || (online && !net().isConnected());
@@ -71,9 +71,13 @@
       restart.textContent = !net().isConnected() ? "BACK TO MENU" : net().localRematch ? "WAITING FOR OPPONENT…" : net().peerRematch ? "ACCEPT REMATCH" : "REQUEST REMATCH";
     }
   }
-  function startLocal() {
+  function startLocal(options) {
     net()?.leaveLobby(); lobby.role = null; lobby.opponentName = null;
-    enterDuel(); game().startLocal(); syncStatus({ status: "idle" }); updateTurnChrome();
+    enterDuel(); game().startLocal(options); syncStatus({ status: "idle" }); updateTurnChrome();
+  }
+  function startVsComputer() {
+    // The log speaks in the third person ("X takes 250 damage"), so the default name is not "You".
+    startLocal({ botSeat: 1, name0: lobby.playerName || "Challenger", name1: "Shadow Bot" });
   }
   function startOnline(info) {
     if (info.hostSeat !== 0 || !["host", "guest"].includes(lobby.role)) return;
@@ -168,7 +172,8 @@
   }
   function wireEvents() {
     const on = (id, handler) => el(id)?.addEventListener("click", handler);
-    on("menu-local-btn", startLocal);
+    on("menu-local-btn", () => startLocal());
+    on("menu-ai-btn", startVsComputer);
     on("menu-create-btn", () => { clearErrors(); showScreen("creating"); el("create-name")?.focus(); });
     on("menu-join-btn", () => { clearErrors(); showScreen("joining"); el("join-code")?.focus(); });
     on("create-back-btn", returnToMenu); on("join-back-btn", returnToMenu);
