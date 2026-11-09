@@ -391,6 +391,16 @@ function surface(subject, name) {
   });
 }
 
+// A plate may use a palette gradient (often a frame jewel) without listing it in defs([...]);
+// add any that are referenced but not defined, so every url(#...) resolves.
+function completeDefs(body) {
+  const { PAL, defs } = require('./art-lib/glass.cjs');
+  const used = new Set([...body.matchAll(/url\(#([\w-]+)\)/g)].map((m) => m[1]));
+  const defined = new Set([...body.matchAll(/ id="([\w-]+)"/g)].map((m) => m[1]));
+  const missing = [...used].filter((id) => !defined.has(id) && PAL[id]);
+  return missing.length ? defs(missing) + body : body;
+}
+
 function renderPlate(card) {
   const title = xml(card.name);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" role="img" aria-labelledby="title desc">
@@ -400,7 +410,7 @@ function renderPlate(card) {
 <linearGradient id="shade" x2="0" y2="1"><stop offset=".72" stop-color="#050812" stop-opacity="0"/><stop offset="1" stop-color="#050812" stop-opacity=".35"/></linearGradient>
 </defs>
 <g>
-<g stroke-linejoin="round">${plates[card.name]()}</g>
+<g stroke-linejoin="round">${completeDefs(plates[card.name]())}</g>
 <rect width="400" height="300" fill="url(#shade)"/>
 </g>
 </svg>
