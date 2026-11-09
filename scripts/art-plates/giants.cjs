@@ -59,7 +59,8 @@ module.exports = () => ({
   'Iron Golem': () => {
     const I = Ink(), H = (d, w = 1.8) => I.add(d, w), G = (d, w = 2, c = '#ffe9b0') => I.add(d, w, c);
     let b = defs(['white', 'gold', 'amber', 'wine', 'violet', 'navy', 'bronze', 'ash', 'steel', 'ivory', 'teal']);
-    b += scene(I, { sx: 96, sy: 104, radii: [0, 32, 72, 140, 420], n: [8, 10, 10, 7], cols: [['white', 'gold'], ['gold', 'amber'], ['wine', 'amber'], ['ash', 'violet']], g: ['bronze', 'wine'], gy: [250, 272], ph: 1, streaks: 'M30 190C50 186 66 192 86 188M120 210C140 206 156 212 176 208M190 40C210 36 226 42 246 38' });
+    // small, low sun tucked in the corner so the golem (not the burst) holds the eye
+    b += scene(I, { sx: 62, sy: 66, radii: [0, 18, 40, 96, 420], n: [8, 10, 10, 7], cols: [['white', 'gold'], ['gold', 'amber'], ['wine', 'amber'], ['ash', 'violet']], g: ['bronze', 'wine'], gy: [250, 272], ph: 1, rings: [26, 48], streaks: 'M30 190C50 186 66 192 86 188M120 210C140 206 156 212 176 208M190 40C210 36 226 42 246 38' });
     // barrier: an arc of gold panes cast over the golem
     let arc = '';
     for (let i = 0; i < 14; i++) {
@@ -74,7 +75,7 @@ module.exports = () => ({
     const ra = 'M330 108C356 114 368 144 366 174L340 178C340 154 334 138 320 130Z', rf = 'M338 170L370 170L372 228L334 232Z', rfist = 'M326 224L378 224L378 262L322 262Z';
     const legs = ['M240 194L272 196L270 252L234 252Z', 'M284 196L316 194L322 252L288 252Z'];
     let f = `<g data-figure="1">` + sil([torso, head, la, lf, lfist, ra, rf, rfist, ...legs]);
-    f += panes([[legs[0], 'ash'], [legs[1], 'ash'], [torso, 'bronze'], ['M342 150C338 184 314 202 278 204L282 186C310 184 326 168 328 140C330 122 326 110 318 100C336 112 344 128 342 150Z', 'wine'], ['M236 120L320 116L318 146L238 150Z', 'steel'], [la, 'bronze'], [lf, 'steel'], [lfist, 'bronze'], [ra, 'ash'], [rf, 'ash'], [rfist, 'ash'], [head, 'steel']]);
+    f += panes([[legs[0], 'ash'], [legs[1], 'ash'], [torso, 'bronze'], ['M342 150C338 184 314 202 278 204L282 186C310 184 326 168 328 140C330 122 326 110 318 100C336 112 344 128 342 150Z', 'wine'], ['M236 120L320 116L318 146L238 150Z', 'steel'], [la, 'bronze'], [lf, 'steel'], [lfist, 'bronze'], [ra, 'bronze'], [rf, 'steel'], [rfist, 'steel'], [head, 'steel']]);
     f += `<g fill="none" stroke="${INK}" stroke-width="3"><path d="M278 150V202M244 176L312 174M176 244H234M324 242H378"/></g>`;
     f += `<g fill="url(#gold)" stroke="${INK}" stroke-width="2"><path d="M262 78H290V86H262Z"/><circle cx="250" cy="134" r="4"/><circle cx="306" cy="132" r="4"/><circle cx="260" cy="190" r="4"/><circle cx="198" cy="244" r="4"/><circle cx="350" cy="242" r="4"/></g>`;
     H(hatch([[318, 100], [340, 116], [346, 140], [340, 170]], 7, 5, 12, -1, { swell: true }), 2);
@@ -88,32 +89,41 @@ module.exports = () => ({
     return b + f + frame('teal');
   },
 
-  // Tall faceted crystal knight; its lower facets shatter and the shards fly to arm a waiting ally.
+  // Tall faceted crystal knight, a small sun haloing its crown; its lower facets shatter and the shards fly to arm a waiting ally.
   'Crystal Sentinel': () => {
-    const I = Ink(), H = (d, w = 1.8) => I.add(d, w), G = (d, w = 2, c = '#fff6c8') => I.add(d, w, c);
-    let b = defs(['white', 'gold', 'amber', 'wine', 'violet', 'navy', 'bronze', 'ivory', 'teal', 'ash']);
-    b += scene(I, { sx: 118, sy: 150, radii: [0, 40, 90, 160, 420], n: [12, 12, 12, 8], cols: [['white', 'gold'], ['amber', 'gold'], ['wine', 'violet'], ['navy', 'violet']], g: ['bronze', 'wine'], gy: [248, 270], ph: 3, rot: 0.1, streaks: 'M250 40C270 36 286 42 306 38M40 50C60 46 76 52 96 48M330 140C346 136 356 140 370 138' });
-    b += `<g fill="none" stroke="${INK}" stroke-width="2" stroke-dasharray="10 6 20 8"><circle cx="262" cy="130" r="92"/></g>`;
+    const I = Ink(), H = (d, w = 1.8) => I.add(d, w), G = (d, w = 2, c = '#ffffff') => I.add(d, w, c);
+    let b = defs(['white', 'gold', 'amber', 'wine', 'violet', 'navy', 'bronze', 'ivory', 'teal', 'ash', 'pearl', 'sky', 'ruby']);
+    b += scene(I, { sx: 266, sy: 64, radii: [0, 22, 46, 104, 420], n: [10, 12, 12, 8], cols: [['white', 'gold'], ['gold', 'amber'], ['wine', 'violet'], ['violet', 'wine']], g: ['bronze', 'wine'], gy: [248, 270], ph: 3, rot: 0.1, rings: [52, 66], streaks: 'M30 60C50 56 66 62 86 58M40 120C60 116 76 122 96 118M330 160C346 156 356 160 370 158' });
     const crown = 'M248 70L256 40L266 60L276 34L284 62L292 46L292 78L284 98L254 98Z';
     const torso = 'M232 102L292 102L306 150L284 198L244 198L222 150Z';
     const ls = 'M234 106L192 80L212 132Z', rs = 'M290 106L330 86L312 134Z';
     const legs = ['M244 198L262 198L258 262L232 262Z', 'M268 198L284 198L298 262L272 262Z'];
     const pole = 'M326 262L334 78L342 78L336 262Z', blade = 'M338 82L320 64L340 22L356 60Z';
     const arm = 'M300 120L338 136L334 150L296 140Z';
-    let f = `<g data-figure="1">` + sil([crown, torso, ls, rs, ...legs, pole, blade, arm]);
-    f += panes([[pole, 'bronze'], [legs[0], 'gold'], [legs[1], 'wine'], [torso, 'gold'], ['M262 102L292 102L306 150L262 150Z', 'amber'], ['M262 150L306 150L284 198L262 198Z', 'wine'], ['M222 150L262 150L262 198L244 198Z', 'ivory'], ['M232 102L262 102L262 150L222 150Z', 'white'], [ls, 'ivory'], [rs, 'amber'], [crown, 'gold'], ['M262 60L276 34L284 62L292 78L284 98L266 98Z', 'amber'], [arm, 'amber'], [blade, 'ivory'], ['M338 82L340 22L356 60Z', 'gold']]);
-    f += `<path d="M258 80L280 80L278 88L260 88Z" fill="${INK}"/><path d="M262 82h14" stroke="url(#white)" stroke-width="3"/>`;
-    // shards breaking from the hip toward the ally
-    f += `<g stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"><path d="M214 196l-14-4l6-12Z" fill="url(#ivory)"/><path d="M192 214l-16 2l4-14Z" fill="url(#gold)"/><path d="M168 226l-14-2l8-10Z" fill="url(#amber)"/><path d="M146 216l-10 6l0-12Z" fill="url(#ivory)"/></g>`;
+    const spires = ['M206 262L212 232L222 262Z', 'M218 262L230 218L240 262Z', 'M300 262L310 228L318 262Z'];
+    let f = `<g data-figure="1">` + sil([crown, torso, ls, rs, ...legs, pole, blade, arm, ...spires]);
+    // every pane is a crystal facet: light pearl / white faces toward the sun-left, teal and sky in the turn
+    f += panes([[pole, 'bronze'], [legs[0], 'pearl'], ['M253 198L262 198L258 262L246 262Z', 'teal'], [legs[1], 'sky'], ['M268 198L276 198L284 262L272 262Z', 'pearl'],
+      ['M232 102L292 102L262 150Z', 'pearl'], ['M292 102L306 150L262 150Z', 'sky'], ['M306 150L284 198L262 150Z', 'teal'], ['M284 198L244 198L262 150Z', 'sky'], ['M244 198L222 150L262 150Z', 'white'], ['M222 150L232 102L262 150Z', 'pearl'],
+      [ls, 'pearl'], ['M234 106L212 132L208 98Z', 'teal'], [rs, 'teal'], ['M290 106L330 86L304 112Z', 'pearl'],
+      [crown, 'teal'], ['M248 70L256 40L266 60L262 98L254 98Z', 'pearl'], ['M266 60L276 34L284 62L278 98L262 98Z', 'white'], ['M284 62L292 46L292 78L284 98L278 98Z', 'sky'],
+      [arm, 'teal'], [blade, 'pearl'], ['M338 82L340 22L356 60Z', 'sky'],
+      [spires[0], 'pearl'], [spires[1], 'teal'], ['M230 218L240 262L230 262Z', 'sky'], [spires[2], 'pearl']], 3);
+    // ruby ward-core at the heart
+    f += `<path d="M262 136L274 150L262 164L250 150Z" fill="url(#ruby)" stroke="${INK}" stroke-width="3"/><path d="M258 80L280 80L278 88L260 88Z" fill="${INK}"/><path d="M262 82h14" stroke="url(#white)" stroke-width="3"/>`;
+    // cracks where the lower facets break away
+    f += `<g fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"><path d="M232 170L244 178L240 190M248 160L240 172"/></g>`;
+    // crystal shards breaking from the hip toward the ally
+    f += `<g stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"><path d="M216 196l-18-6l10-14Z" fill="url(#pearl)"/><path d="M194 216l-20 0l8-16Z" fill="url(#teal)"/><path d="M168 228l-16-4l10-12Z" fill="url(#white)"/><path d="M148 214l-12 8l-2-14Z" fill="url(#sky)"/></g>`;
     H(hatch([[292, 102], [300, 120], [306, 140], [306, 150]], 4, 5, 10, -1) + hatch([[306, 150], [298, 166], [290, 184], [284, 198]], 5, 5, 12, -1), 1.8);
     H(hatch([[298, 262], [290, 240], [286, 220], [284, 198]], 5, 3, 8, 1), 1.8);
     H(hatch([[330, 86], [324, 102], [318, 118], [312, 134]], 4, 3, 8, 1), 1.6);
-    G('M236 112L256 112M228 146L240 120M230 158L246 190', 2.5);
-    G('M198 88L210 120M252 76L256 50', 2);
+    G('M238 108L254 110M230 144L238 118M232 158L242 184', 2.5);
+    G('M200 88L208 112M252 74L256 48M270 64L276 44M344 34L342 56M220 254L226 232', 2);
     f += I.flush() + `</g>`;
-    // the ally receiving the crystal ward
-    let k = foe(104, 258, 1.5, 'gold') + `<path d="M116 210L136 202L142 232L128 248L114 234Z" fill="url(#ivory)" stroke="${INK}" stroke-width="3"/>`;
-    G('M122 214L132 210M120 224L124 236', 2, '#fff');
+    // the ally receiving the crystal ward: a shield of the same glass
+    let k = foe(104, 258, 1.5, 'gold') + `<path d="M116 210L136 202L142 232L128 248L114 234Z" fill="url(#pearl)" stroke="${INK}" stroke-width="3"/><path d="M128 206L142 232L128 248Z" fill="url(#teal)" stroke="${INK}" stroke-width="2.5"/>`;
+    G('M120 216L128 212M120 224L122 236', 2, '#fff');
     k += I.flush();
     return b + f + k + frame('teal');
   },

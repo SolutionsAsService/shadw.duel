@@ -625,3 +625,34 @@ a shortcut.
 |---|---|---|
 | Lenses (Schell) | PASS: no picture contradicts its rule; notes on Crystal Sentinel's name and the recurring rose-window disc | Crystal Sentinel revised (M25) |
 | Readability (Solarski) | OBJECT (minor): "a clear step up from C and works as one series". Burst competes on Crystal Sentinel and Iron Golem; Shadow Stalker and Undertow too dark or thin | ADAPT: M25 |
+- **M25 Four revisions (Readability and Lenses):**
+  - Crystal Sentinel became a faceted crystal knight under a small sun.
+  - Iron Golem's sun was moved small to the corner.
+  - Shadow Stalker was lightened to steel and ash.
+  - Undertow's victim became a full-bodied ruby and gold warrior.
+  - Measured: all four sep >= 1.7. The set: minimum 1.68 at 53x40, median 2.09, nearest twin 0.55.
+
+Not re-sat after M25: Readability's objection was minor and named exactly these four cards, each answered as asked and
+measured. Recorded here as a shortcut.
+
+## Stop test (run 3)
+
+- **S1:** MET.
+- **S2:** MET, with the shortcut above. Lenses PASS; Readability's minor objection resolved.
+- **S3:** NOT strictly met. The last round produced one ADAPT (M25), and no further round was run.
+- **S4:** MET. Every card was redrawn in the chosen style; the measured readings are above.
+- **S5:** MET.
+- **S6:** MET.
+  - `npm test` 95 pass.
+  - Browser suite 7 of 7.
+  - text-fit 0 of 75.
+  - art:check 75.
+- **S7:** Must-have 10 is MET. All 75 cards are woodcut + stained glass from one guide and one library.
+
+**Run 3 status: COMPLETE, except S3.** The owner judges the art next.
+
+## Open items after run 3
+
+1. Readability noted Wither (three focal points) and Quick Draw (small card, empty window) as next-weakest.
+2. Lenses: the rose-window sunburst recurs on most cards, and Death abilities are seldom drawn.
+3. The first-seat advantage and field-card ability text are carried from run 2.

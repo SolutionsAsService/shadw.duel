@@ -38,7 +38,12 @@ user-supplied path. The same API is exported via CommonJS for Node tooling.
 
 ## Editing and verification
 
-Since 1.4.0 the art has three parts:
+Since 1.5.0 every card is a **plate** in the woodcut + stained glass style: `scripts/art-plates/*.cjs` draw whole
+illustrations with the helpers in `scripts/art-lib/glass.cjs`, following `docs/ART_STYLE.md`; each wraps its subject in
+`<g data-figure="1">` for the read-size checks. The older layers below remain as the fallback for a card without a
+plate.
+
+From 1.4.0 the art had three parts:
 - `scripts/art-subjects/*.cjs`: the drawings, one module per family (winged, beasts, giants, knights, casters,
   spells-attack, spells-guard, spells-trick, relics). Each exports `(kit) => ({ 'Card Name': () => svg })`.
 - `scripts/art-scenes.cjs`: each card's setting, time of day, sun or moon, framing and particles, chosen from its name.

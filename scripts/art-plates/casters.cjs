@@ -290,9 +290,10 @@ module.exports = () => ({
     const tail = ribbon([[334, 116], [356, 96], [356, 70], [332, 60]], 12, 4, 8);
     const claws = 'M112 202L94 196L110 208L92 212L110 214L96 222L116 214Z';
     let f = `<g data-figure="1">` + S([tail, hind, fore2, ribbon(torso, 40, 26, 12), head, fore1, claws]);
-    f += P([[tail, 'violet'], [hind, 'ash'], [fore2, 'ash'], ...segs(torso, 40, 26, 4, ['violet', 'steel']),
-      [ribbon([[332, 132], [290, 120], [232, 144], [186, 162]], 16, 10, 10), 'ash'], [head, 'steel'], ['M186 168C162 180 140 182 120 178L136 164L112 164C140 164 166 162 188 156Z', 'violet'],
-      [fore1, 'violet'], [claws, 'ivory']]);
+    // lit panes one value step up (steel / ash) so the stalker separates from the violet dusk; violet stays in the underside
+    f += P([[tail, 'ash'], [hind, 'steel'], [fore2, 'ash'], ...segs(torso, 40, 26, 4, ['ash', 'steel']),
+      [ribbon([[332, 132], [290, 120], [232, 144], [186, 162]], 16, 10, 10), 'violet'], [head, 'steel'], ['M186 168C162 180 140 182 120 178L136 164L112 164C140 164 166 162 188 156Z', 'ash'],
+      [fore1, 'steel'], [claws, 'ivory']]);
     f += `<g fill="url(#gold)" stroke="${INK}" stroke-width="2.5"><path d="M270 106L276 84L286 106Z"/><path d="M240 116L244 94L256 114Z"/><path d="M300 104L312 84L316 106Z"/><path d="M210 132L210 112L222 128Z"/></g>`;
     f += `<path d="M150 150l12-4l-4 8Z" fill="url(#white)" stroke="${INK}" stroke-width="2"/>`;
     G('M118 166l6 4l6-4l6 4l6-4M124 176l5-3l5 3', 1.6, '#fff');

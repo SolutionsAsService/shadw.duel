@@ -264,13 +264,22 @@ module.exports = () => ({
     const arm2 = rib([[318, 254], [362, 192], [300, 164], [236, 228]], 24, 7, 4, ['sky', 'teal'], 3);
     let w = lead(fill(ring(132, 36), 'teal') + fill(ring(96, 26), 'sky') + fill(ring(62, 15), 'deep') + fill(ring(30, 7), 'navy'), 3);
     w += `<path d="M${WX - 112} ${WY - 2}C${WX - 60} ${WY - 26} ${WX + 60} ${WY - 26} ${WX + 112} ${WY + 4}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-dasharray="14 8"/>`;
-    const k = foe(WX + 4, WY + 8, 1.45, 0.3, { shield: 'ruby', fx: -1 });
-    let f = `<g data-figure="1">` + sil([lip, arm.sil, arm2.sil]) + lead(fill(lip, 'sky') + arm.panes + arm2.panes);
+    // the dragged-under foe: a full-bodied armoured warrior sunk to the waist, arms flung up, in light glass
+    const vt = 'M186 256L182 204C182 188 196 180 212 180C230 180 242 190 240 206L236 256Z';
+    const vh = 'M194 166C194 150 220 148 222 164C222 180 194 182 194 166Z', crest = 'M200 154L206 132L214 152Z';
+    const va = 'M190 192L156 134L144 142L176 204Z', vb = 'M232 190L262 148L272 156L244 204Z';
+    const vs = 'M136 150L104 116L110 110L144 142Z';
+    let f = `<g data-figure="1"><g transform="translate(26 -4)">` + sil([vt, vh, crest, va, vb, vs]) + lead(fill(vt, 'ruby') + fill('M212 180C230 180 242 190 240 206L236 256L212 256Z', 'gold') + fill(va, 'ruby') + fill(vb, 'gold') + fill(vh, 'pearl') + fill(crest, 'gold') + fill(vs, 'pearl') + fill('M190 214L234 212L236 226L188 228Z', 'pearl'), 3);
+    f += `<path d="M200 164H218" stroke="${INK}" stroke-width="4"/><g fill="url(#pearl)" stroke="${INK}" stroke-width="2.5"><circle cx="150" cy="134" r="8"/><circle cx="268" cy="148" r="8"/></g>`;
+    I.add('M190 200L192 248M162 146L182 186M204 156L206 146', 2, '#ffe6ea');
+    I.add('M230 196L228 248M238 212L234 252', 1.8);
+    f += I.flush() + '</g>';
+    f += sil([lip, arm.sil, arm2.sil]) + lead(fill(lip, 'sky') + arm.panes + arm2.panes);
     I.add(rh(arm, 'R', 14, 6, 16) + rh(arm2, 'L', 6, 4, 9), 1.8);
     I.add(rg(arm, 0.22, 0.05, 0.92) + rg(arm2, 0.75, 0.1, 0.85), 2.5, '#ffffff');
     I.add(`M${WX - 120} ${WY + 14}C${WX - 80} ${WY + 30} ${WX + 60} ${WY + 30} ${WX + 110} ${WY + 16}`, 2, '#c8f4ff');
     f += I.flush() + `<g fill="url(#pearl)" stroke="${INK}" stroke-width="2"><circle cx="150" cy="108" r="6"/><circle cx="182" cy="128" r="4"/><circle cx="58" cy="140" r="5"/></g></g>`;
-    return b + w + k + f + frame('sky');
+    return b + w + f + frame('sky');
   },
 
   'Wither': () => {

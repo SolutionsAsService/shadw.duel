@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.5.0 — 2026-11-09
+
+- **New art style for every card: woodcut + stained glass.** Carved black leading around
+  glowing jewel-tone panes, woodcut hatching inside them, a gothic frame and a lit sunburst,
+  chosen by the owner from a four-style comparison. All 75 cards redrawn from one style guide
+  (`docs/ART_STYLE.md`) and one shared library (`scripts/art-lib/glass.cjs`); each drawing
+  still shows its card's ability or effect.
+- Art budget 1.25 MB (and 220 KB gzipped); the set is 788 KB, 139 KB gzipped.
+
 ## 1.4.0 — 2026-11-09
 
 - **Every creature has its own ability** (40 different), firing on Summon, Attack, Kill,
