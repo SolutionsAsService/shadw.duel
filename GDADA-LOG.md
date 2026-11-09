@@ -414,3 +414,98 @@ No ANDON in any round. Every finding is in the tables above.
 
 Tools used: Node 22, Playwright with Chromium, GDADA `card_art.py`, `scripts/card-stats.cjs`, subagents (7 seats × 3
 rounds, 17 verdicts). Not used: human playtesters, sound.
+
+---
+
+# Run 2: abilities and art (9 Nov 2026)
+
+**Mode:** Player-first. **Run type:** Extend, with the owner lifting run 1's freeze on existing card behaviour and art.
+Turn rules stay frozen.
+
+## Step 0: vision and inputs
+
+- The owner said: "Art needs work also cards need lots more detail like different abilities".
+- One question was asked: what is wrong with the art? The answer: "Too simple / not detailed" and "Looks generic /
+  samey". The owner did not pick "the white outline" or "the card frame".
+- Written into `VISION.md` first (Change log; Must-haves 6-9) and pushed before any build.
+- Premortem R0, run 2:
+  1. 40 new abilities overwhelm a first duel. -> trigger words and a glossary
+  2. An ability throws and stalls an online match. -> every trigger is caught; card-stats counts thrown effects
+  3. New text does not fit the card. -> text-fit test
+  4. Richer art loses the read at 53 x 40. -> card_art.py gate on every redraw
+  5. "More detail" is read as more noise rather than better drawings. -> redraw by hand, not texture
+
+## Seed
+
+- `Interesting decisions (Sid Meier)`
+- `The Lenses: surprise, curiosity, endogenous value, problem statement (Schell, The Art of Game Design)`
+- `Readability: silhouette, contrast, one focal point (Solarski, Drawing Basics and Video Game Art)`
+- `Affordances, signifiers, feedback (Norman, The Design of Everyday Things)`
+- Dotted counterpoint: `Game Feel: input, response, context, polish (Swink)` -.-> `Rules, play and culture;
+  meaningful play (Salen and Zimmerman, Rules of Play)`. Do the abilities feel like something happened, or are they
+  rules text?
+
+## Decision Records (run 2)
+
+- **M12 Ability engine (BREAK):**
+  - `trigger()` hooks: onSummon, onAttack (before combat), onKill, onDeath (8 deep max) and onDawn.
+  - Each is caught and logged. Kill may grant one extra attack.
+  - `createCard` copies the hooks: run 1's lesson, applied before the first measurement.
+  - Measured: 0 effects threw in 4000 matches; 95 tests.
+- **M13 Abilities and riders:**
+  - 40 different creature abilities in the elements' identities.
+  - Riders on 9 spells that differed only in size.
+  - Measured: 0 of 75 cards outside 30-70% on two 2000-match seed ranges (spread 38-65%). Worldbreaker Titan went from
+    70-73% to 62-65%, closing run 1's open item 2 by an ability rather than a stat cut. Divine Renewal now touches the
+    board, closing run 1's open item 7 (light board card).
+- **M14 Scenes:**
+  - `art-scenes.cjs` adds a setting, time, sun or moon, horizon, parallax, framing, particles and a camera per card.
+  - 34 setting/time combinations across 75 cards (was 7 landscapes, one hour).
+- **M15 Surface detail:** form shading, lit flesh, bevels and rivets.
+  - Readability R1 judged the marks a wireframe, and the drawings themselves the real problem. KEPT only for subjects
+    not yet redrawn; superseded by M17.
+- **M16 Abilities that fit their fiction (Decisions and Lenses R1):**
+  - Pyre Phoenix returns to hand once.
+  - Sky Sovereign rallies a wind creature to attack again.
+  - Leviathan drags the weakest enemy down.
+  - Flame Serpent's Kill deals half the victim's ATK.
+  - Arcane Automaton draws on a small hand.
+  - Tempest Giant loses Swift.
+  - Measured: Tempest Giant 61% -> 52-54%; Flame Serpent 40% -> 43-49%.
+- **M17 Redraw every card (BREAK, the run's ambition push):**
+  - Nine agents, one module each (`scripts/art-subjects/`), each held to `card_art.py` against all 75 cards.
+  - Creatures show their ability in pose or prop. Spells are events, not badges. Relics are objects with presence.
+  - Before -> after: sep < 1.6 at 53x40 4 -> 0 of 75; twins 0 -> 0; inspect/hand/board windows 0 flags.
+  - Night scenes 27 -> 16.
+- **M18 Text that fits and can be read (Access R2):**
+  - Ability text 11px and keywords 10px; texts ≤ 55 characters with defined terms; hand cards 256px.
+  - `tests/text-fit.cjs` enforces size and fit. A 10px fixture fails all 75 cards.
+  - Before -> after: 55 of 75 clipped -> 0.
+- **M19 Visible effects (Affordance and Feel R2):**
+  - Trigger chips on field cards.
+  - Panel chips: Barrier, Next creature, ±LP this turn, +cards this turn.
+  - Extra attacks outlined.
+  - Field stats stacked so four-digit values never sit under the info button (found on the 360px screenshot, not by any
+    seat).
+- **M20 Scene light (Readability R2):** the rim is lit from the scene (70% on the far side), and dawn, day and dusk suns
+  are rayed.
+  - A 35% far side cost 8 cards their separation; 70%, plus a wider rim on 2 cards, keeps all 75 above 1.6.
+
+## Panel Reports (run 2)
+
+Every seat is a separate subagent with its verdict filed under `panel/run2-R<n>/`.
+
+| Round | Seat | Verdict | Resolution |
+|---|---|---|---|
+| R1 | Readability (Solarski) | OBJECT: silhouettes unchanged, surface marks are a wireframe, uniform outline | ADAPT: M17 redraw of all 40 creatures |
+| R1 | Lenses (Schell) | OBJECT: art does not show the ability; 3 fiction/rule mismatches; too much night | ADAPT: M16, M17 action props, night 27 -> 16 |
+| R1 | Decisions (Meier) | PASS with 3 changes | ADAPT: M16 (Sky Sovereign rallies, instead of the direct-attack heal suggested) |
+| R2 | Readability | OBJECT: spells/relics are now the samey part; light not from the scene | ADAPT: spells and relics redrawn (M17); M20 |
+| R2 | Lenses | PASS (notes: suns read as moons; Sovereign's flock) | ADAPT: rayed suns (M20) |
+| R2 | Decisions | PASS | none |
+| R2 | Access (GAG) | OBJECT: 9px ability text | ADAPT: M18 |
+| R2 | Affordance (Norman) | OBJECT: no sign a Death/Dawn will fire; banked effects invisible; "shield" vs "Barrier" | ADAPT: M19 |
+| R2 | Feel (Swink) | OBJECT: player-only effects have no response | ADAPT: M19 |
+| R3 | Readability | PASS (scene light only partly met; no player cost) | none |
+| R3 | Access | PASS | none |
+| R3 | Affordance | PASS (optional: pulse the chip when it fires) | DEFERRED, polish |
