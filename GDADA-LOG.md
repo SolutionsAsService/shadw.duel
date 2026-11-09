@@ -1,6 +1,6 @@
 # GDADA-LOG: Shadow Duel
 
-Run 1: 9 Nov 2026. **Mode:** Player-first. **Run type:** Extend. **Status:** see Stop test.
+Run 1: 9 Nov 2026. **Mode:** Player-first. **Run type:** Extend. **Status:** COMPLETE (see Stop test and Open items).
 
 ## Step 0: vision, tooling, inputs
 
@@ -261,3 +261,146 @@ The seats played from the evidence file, the code, `card-stats` runs of their ow
   at the mid value.
 - **Measurement:** all four are clean in every window, `noise` included.
 - **Result:** KEEP.
+
+### Panel R3 (WHOLE, build d38b945, evidence: panel/R3/evidence.md): final round under the cap
+
+Seated: the four R2 objectors, plus Readability, because the art changed. Flow and Feel passed R2. What changed since
+then touches their concerns only in the directions they asked for (impacts last for the turn: Feel's note), so their
+R2 PASS is carried, not re-sat. This is stated here because it is a shortcut.
+
+| Critic (work) | Observed | Verdict | Note |
+|---|---|---|---|
+| Decisions (Meier) | Turning Gale is not dominated by Fireball; Second Wind neither dominates nor is dominated by any 1-cost card; hold rate printed | PASS | Advisory: the bot never holds Turning Gale or Second Wind |
+| Access (GAG) | W/G visible at 360px; legend in Rules and the detail panel | PASS | Advisory: screen readers do not announce the "would hit" label |
+| Affordance (Norman) | Faces name the stat and Ward; preview matches the result (tested) | PASS | Touch players get no preview; the face text and impact marks cover it |
+| Learner (Koster) | Instrumentation in; Undertow held 0.10 per match, median victim 1100 ATK | PASS | Relics stay a lottery in a one-copy shared deck: open item |
+| Readability (Solarski) | Riptide, Storm Feather and Rally Cry read as filled masses; Wither's flower head stays the focus | PASS | Rally Cry is the faintest of the three |
+| Flow (Csikszentmihalyi) | carried from R2 | PASS (R2) | |
+| Feel (Swink) | carried from R2 | PASS (R2) | |
+
+No ANDON in any round. Every finding is in the tables above.
+
+## Anchor Ledger
+
+| Anchor | Used in | Outcome |
+|---|---|---|
+| `Interesting decisions (Sid Meier)` | Seed; M2, M9 | kept: 7 board spells; 0 strictly dominated new cards |
+| `Feedback loops and economies (Adams and Dormans, ...)` | Seed; M1, M2 | adapted: per-element relics. Learner: relics are a lottery without deck building (open) |
+| `Readability: silhouette, contrast, one focal point (Solarski, ...)` | Seed; M6, M7, M8, M11 | kept: sep under 1.6 at 53x40 37/55 -> 4/75; twins 8 -> 0 |
+| `Bot playtesting: perfect bot proves solvable, noisy bot shows the curve` | Seed; M3, M4, M9 | adapted: the greedy bot plays the board spells; card-stats with held turns and effects |
+| `Affordances, signifiers, feedback (Norman, ...)` | Seed; M5, M10 | kept: marks at every width, honest faces, preview, impact outline |
+| `Flow: challenge matched to skill, ... (Csikszentmihalyi, Flow)` | Dotted seed; R1-R2 | adapted: answers on the board; first-seat edge reduced, not fixed (frozen rule) |
+| `Fun as learning patterns; ... (Koster, ...)` | Dotted counterpoint; R1-R3 | kept: patterns about 6 -> about 10 |
+| `Game Accessibility Guidelines: basic, intermediate, advanced` | R1-R3 | kept: shapes as well as colour; 10px phone text; legend |
+| `Game Feel: input, response, context, polish (Swink)` | R1-R2; M5, M10 | kept: impact outline, static under reduced motion |
+| `Deterministic simulation: same seed, same result` | M1, hard limit | kept: same seed gives the same match; two-browser WebRTC test passes |
+| `Procedural rhetoric: rules that argue (Bogost, Persuasive Games)` | Dotted from Koster | declined: the duel's theme is not argued by its rules in this run; nothing in VISION asks it to be |
+| `Sound as feedback and mood (Collins, Game Sound)` | Out-edge of anim | declined: out of scope (Feel agreed) |
+
+## Stop test
+
+- **S1 (no OPEN Frontier items): MET.** Every row is TAKEN or DEFERRED with a reason and an owner.
+- **S2 (a WHOLE round with PASS from every required critic, no Andon): MET, with one shortcut.** R3 seated 5. Flow and
+  Feel carry their R2 PASS (stated above).
+- **S3 (last WHOLE round had no ADAPT, SCRAP or REOPEN): MET.** R3 requested no change; its advisories are logged.
+- **S4 (ambition push): MET.** The boldest idea is the board spells. They were pushed to the 8-cost finisher (M4:
+  Undertow uncapped, then held for a 1000+ ATK target).
+  - Measured: Undertow's median victim went from ATK unrecorded to 1100, its hold rate from 0.01 to 0.10.
+  - Worldbreaker Titan moved only 73% -> 70%: the push hit the frozen-card wall, which is logged.
+- **S5 (every dotted edge from a used anchor applied or declined): MET.**
+  - Applied:
+    - `flow -.-> fun`: the seed counterpoint.
+    - `gamefeel -.-> rules`: the impact outline gives feel within the frozen rules.
+    - `juice -.-> scope`: one pulse, no further animation.
+  - Declined, with reasons:
+    - `fun -.-> persuasive`: VISION asks for no rhetoric.
+    - `cozy -.-> decisions` and `ramp -.-> cozy`: this is not a cozy game.
+    - `proc -.-> envstory`: there is no procedural content.
+- **S6 (build runs, tests pass): MET.**
+  - `npm test`: 85 pass, 0 fail.
+  - `npm run art:check`: 75 verified.
+  - `node tests/browser.cjs`: 7 of 7, including two-browser WebRTC.
+  - `node scripts/bot-match.cjs --seed 1 --matches 20`: 20 of 20 finish.
+- **S7 (every Must-have built and checked): MET.**
+  1. GDADA has a card-art tool: `skills/gdada/scripts/card_art.py` in SolutionsAsService/gdada, with its self-test
+     and `references/card-art.md`.
+  2. Every card reviewed with GDADA, art and play: all 75 measured by `card_art.py` and `card-stats.cjs`. Seven seats
+     sat three rounds.
+  3. More card variety where the game was good: 20 cards. The 7 board spells and 2 catch-up spells are new patterns.
+     The relics complete every element. The creatures fill the empty cost slots and the under-used keywords.
+  4. The new art passes the read-size checks: 0 of 20 new cards fail sep, twin, area or kept.
+  5. Nothing that worked broke: rules, art check, deterministic matches and online sync all pass.
+
+**Run status: COMPLETE**, with the open items below for the owner.
+
+## Open items (owner decisions; not blockers)
+
+1. **The first player wins about 68% of bot matches** (72.7% before this run). Fixing it needs a turn-rule change,
+   for example the first player skips the opening draw, or the second player starts with +1 energy. Extend froze the
+   turn rules. Flow measures what is left as one game in three decided by seat.
+2. **Worldbreaker Titan is at the 70% limit** (73% / 69% / 70% across seed ranges). It is an existing card. Suggested
+   change: DEF 1450 -> 1300, so the 1350-ATK finishers can trade with it.
+3. **Existing dominated cards** (Decisions R1): Flame Burst against Void Bolt, Aegis against Healing Potion, Ember
+   Whelp against Wind Falcon, Ancient Titan against Abyssal Kraken. A rework is a Rebalance run. Decisions measured
+   the cost as small, because decks are random.
+4. **Relics teach nothing without deck building** (Learner): with one copy of every card, an element relic is a
+   lottery. VISION rules out deck building in this run.
+5. **Playtest items** (watch, do not explain):
+   - Do players notice Ward deciding Undertow's target before they cast it?
+   - Do they cast Riptide before attacking without being told?
+   - Does Second Wind's "otherwise 400 LP" read as a consolation or a choice?
+6. **Advisories:**
+   - The bot never times Turning Gale or Second Wind.
+   - Screen readers do not announce "would hit".
+   - Touch players get no preview.
+   - Rally Cry is the faintest of the filled spells.
+
+## Double loop
+
+- **Did the criterion, panel or graph fail the game?**
+  - The graph has no anchor for **balance measured across a card pool**. The bot-playtesting anchor proves
+    solvability and difficulty, not whether a card is dominated or confounded.
+  - Two of this run's errors lived exactly there:
+    - A conditional card's win rate measured selection, not strength (Second Wind 24%).
+    - A bot that cannot see a card's intent measures nothing (the `createCard` incident).
+- **Graph amendment, applied in GDADA (`references/game-graph.md`):** a node `Card pool balance: dominance, selection effects, held rate (bot
+  playtesting over a pool)` under PLAYTEST AND RISK, with an edge from `bots` and a dotted counterpoint to
+  `decisions`.
+
+## Carry-Forward Ledger (durable facts about this game)
+
+- **Combat:** the attacker's ATK against the defender's DEF. An enemy's ATK lowered on your turn does nothing; any
+  debuff must touch DEF.
+- **Timing:** `tempAtk` and `tempDef` expire at the start of their controller's turn. On your own creatures they last
+  through the opponent's turn; on enemies they last only for your turn.
+- **Card fields:** `createCard` copies an explicit list of template fields. Any new field must be added there, or the
+  bot and UI never see it.
+- **Spell targeting:** spells are untargeted. A board effect picks by `pickCreature`: never Ward, best value, leftmost
+  on a tie. The preview (`targets`) must stay identical to the effect, and a test enforces it.
+- **Balance numbers:** use 2000 matches on two seed ranges. 400 matches swung one card by 10 points.
+- **Art:** the value rim (`rim()`) and the family-separation block are what keep the art legible at 53 x 40. Any new
+  subject gets its own base shape, and passes `card_art.py` before it ships.
+
+## Compliance Check
+
+- [x] `VISION.md` read first (created from the person's words); Must-haves traced to moves (S7 above)
+- [x] Game run before it was judged; R0 premortem done
+- [x] Mode, run type, player and criterion stated
+- [x] Seed with exact labels and a dotted counterpoint; living Frontier
+- [x] At least one BREAK move (M2 board spells; M6 value rim); no quota used as a stopping rule
+- [~] A Decision Record for each move, with options and a measurement. **Not before the move:** the records were
+  written up as each move closed. Their measurements were taken at the time.
+- [x] A Panel Report per round, one critic per reference, each a separate subagent with a filed verdict (`panel/R1-R3`).
+  R3 carried 2 seats from R2.
+- [x] Measurements printed at the final state (R3 evidence), with claim-audit counts:
+  - **Measured: 14.** Card counts, win rates, first-seat rate, held rates, effects, sep, twins, area, test counts,
+    browser scenarios, deck-outs, mean turns, the median victim ATK, and the pattern count. The pattern count is
+    Learner's tally, not an instrument.
+  - **Computed: 2.** Dominance checks; the card-variety matrix.
+  - **Assumption: 3.** "A stranger understands the targeting rule from the face"; "Riptide-before-attack is
+    discovered"; "relics feel like a lottery to humans". Each is a playtest item above.
+- [x] S1 to S7 shown as met, with where
+- [x] Anchor Ledger complete; final reply states mode, run type, tools, stop conditions and everything skipped
+
+Tools used: Node 22, Playwright with Chromium, GDADA `card_art.py`, `scripts/card-stats.cjs`, subagents (7 seats × 3
+rounds, 17 verdicts). Not used: human playtesters, sound.
