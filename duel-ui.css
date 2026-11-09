@@ -186,6 +186,11 @@ body:has(#lobby-overlay:not(.hidden)), body:has(#game-over-overlay:not(.hidden))
 #player-hand .card .card-text { align-items: flex-start; font-size: 11px; line-height: 1.22; }
 #player-hand .card .card-keywords { font-size: 10px; }
 .card-marks .mark-trigger { border-color: #9fe0ff99; color: #cdefff; }
+/* Panel chips wrap onto their own line instead of being cut off by the ellipsis. */
+.player-info { white-space: normal; overflow: visible; text-overflow: clip; }
+/* Field cards: ATK over DEF, clear of the info button, so four-digit stats never collide. */
+.field .card.card .card-stats { flex-direction: column; align-items: flex-start; gap: 0; padding: 2px 28px 2px 2px; font-size: 0; }
+.field .card.card .card-stats span { font-size: 10px; line-height: 1.25; white-space: nowrap; }
 .panel-chip { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 9px; font-size: 11px; line-height: 18px; background: #ffffff14; border: 1px solid #ffffff2e; }
 .panel-chip-pending { border-color: #ffd27a99; color: #ffe2a6; }
 .panel-chip-up { border-color: #8ff0a899; color: #b5f5c6; }
@@ -196,6 +201,9 @@ body:has(#lobby-overlay:not(.hidden)), body:has(#game-over-overlay:not(.hidden))
   /* A column on the right edge, clear of the cost badge; the state pill sits left of it. */
   .field .card .card-marks { top: 3px; right: 2px; gap: 1px; flex-direction: column; }
   .field .card-marks span { min-width: 13px; height: 13px; padding: 0 1px; font-size: 10px; }
+  /* Phone field cards are ~66px wide: the info button sits above the stats, which get the full width. */
+  .field .card.card .card-stats { padding: 2px; }
+  .field .card .card-info-button { bottom: 34px; right: 2px; }
   .field .zone.impact-destroyed { font-size: 10px; line-height: 1.2; overflow-wrap: anywhere; padding: 2px; }
   .field .card .card-name { font-size: 10px; }
   .field .card .card-stats { font-size: 10px; }
