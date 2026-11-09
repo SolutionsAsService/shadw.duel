@@ -49,9 +49,10 @@ the board, in the inspect panel and in the collection.
    9 Nov 2026)
 9. The richer art still passes the read-size checks (sep, twins, area, kept), and abilities fit one readable line on
    the card face. (`inferred` from pillar 3 and Must-haves 6-8)
-10. **The art is "ink and colour": woodcut + painterly.** Bold carved black linework and hatching that models form, over
-    full saturated painterly colour with directional light. Every card is a complete illustration in this one style,
-    consistent across the set. (`owner`, chose "Woodcut + painterly" after a four-style comparison, 9 Nov 2026)
+10. **The art is woodcut + stained glass.** Dark carved leading divides each picture into glowing jewel-tone panes;
+    woodcut's bold carved linework and hatching inside the panes models form; an ornamental frame worked into the
+    plate. Every card is a complete illustration in this one style, consistent across the set. (`owner`: "Combine wood
+    and stained no misimpit", correcting an earlier "Woodcut + painterly" pick, 9 Nov 2026)
 
 ## Will not do
 - Recreate a specific existing game: its card names, rules text, mana symbols, frames or art. The genre is fair game,
@@ -95,3 +96,5 @@ Must-haves 1-5 are built and checked; see S7 in `GDADA-LOG.md`. Success test not
 - 9 Nov 2026. Shown four styles on three cards (panel/style-compare.png): today's, painterly, stained glass and woodcut.
   The owner chose "Mix two of them" -> "Woodcut + painterly": woodcut's bold black carved linework and hatching over
   painterly colour and lighting. This becomes the art direction for all 75 cards (Must-have 10).
+- 9 Nov 2026. "Combine wood and stained no misimpit". The "Woodcut + painterly" pick was a mis-input; the mix is
+  woodcut + stained glass. Must-have 10 rewritten.
