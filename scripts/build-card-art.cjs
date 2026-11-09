@@ -6,6 +6,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { MONSTER_TEMPLATES, SPELL_TEMPLATES, RELIC_TEMPLATES } = require('../cards.js');
+const { scene } = require('./art-scenes.cjs');
 const root = path.resolve(__dirname, '..');
 const cards = [...MONSTER_TEMPLATES, ...SPELL_TEMPLATES, ...RELIC_TEMPLATES];
 const palettes = {
@@ -28,36 +29,6 @@ const armor = (d, extra = '') => p(d, 'url(#metal)', `stroke="var(--mid)" stroke
 const gem = (x, y, size = 20) => group(p('M0 -25 17 -8 12 15 0 29 -13 13 -18 -8Z', 'var(--mid)') + p('M0 -25 0 29 12 15 17 -8Z', 'var(--glow)') + p('M0 -25 -18 -8 0 -2 17 -8Z', 'var(--white)') + line('M-18 -8 0 -2 0 29', 1), `translate(${x} ${y}) scale(${size / 25})`);
 const eye = (x, y, size = 3) => circle(x, y, size + 3, 'var(--glow)', 'opacity=".16"') + circle(x, y, size, 'var(--white)');
 const star = (x, y, size = 8) => p(`M${x} ${y - size}l2 ${size - 2} ${size - 2} 2 -${size - 2} 2 -2 ${size - 2} -2 -${size - 2} -${size - 2} -2 ${size - 2} -2Z`, 'var(--white)');
-
-function environment(card, seed) {
-  let out = `<rect width="400" height="300" fill="url(#sky)"/>`;
-  out += circle(226, 126, 142, 'url(#aura)');
-  out += circle(266, 74, card.element === 'shadow' ? 43 : 32, 'var(--glow)', 'opacity=".13"');
-  out += line('M-20 157Q104 51 238 100T425 56', 1, 'opacity=".15"');
-  for (let i = 0; i < 33; i++) {
-    const x = (i * 73 + seed * 19) % 390 + 5;
-    const y = (i * i * 17 + seed * 11) % 250 + 7;
-    out += circle(x, y, i % 7 === 0 ? 1.6 : .7, 'var(--white)', `opacity="${i % 3 === 0 ? '.5' : '.2'}"`);
-  }
-  out += p('M0 217 43 175 79 191 111 143 156 190 198 164 260 202 308 137 343 186 400 157V300H0Z', 'var(--mid)', 'opacity=".18"');
-  if (card.element === 'water') {
-    out += [194, 224, 258].map((y) => line(`M-20 ${y}Q45 ${y - 23} 108 ${y}T230 ${y}T420 ${y}`, 2, 'opacity=".22"')).join('');
-    out += p('M0 250Q40 193 65 250L57 213 83 257 110 246 123 287H0M333 300L342 217 353 242 362 188 369 244 390 215 379 300', dark, 'opacity=".7"');
-  } else if (card.element === 'flame') {
-    for (let i = 0; i < 7; i++) out += p(`M${i * 68 - 25} 300q-20 -45 12 -78q-3 35 15 41q14 -45 8 -67q40 47 21 104Z`, 'var(--glow)', 'opacity=".11"');
-  } else if (card.element === 'light') {
-    out += p('M37 245V78L54 51 70 78V245H59V91H48V245M331 245V78L347 51 364 78V245H353V91H342V245', 'var(--mid)', 'opacity=".24"');
-    out += line('M54 83Q201 -28 347 83M54 97Q201 -15 347 97', 2, 'opacity=".15"');
-  } else if (card.element === 'earth' || card.element === 'neutral') {
-    out += p('M0 263 40 231 73 249 93 228 128 268 186 250 234 275 271 239 316 258 348 224 400 247V300H0Z', dark, 'opacity=".8"');
-  } else if (card.element === 'wind') {
-    out += line('M-35 107Q91 63 167 91T421 55M-14 237Q103 195 213 225T433 183', 5, 'opacity=".1"');
-  } else {
-    out += line('M3 285Q44 205 31 125M31 175 62 153M377 282Q346 181 369 117M361 186 336 169', 6, 'opacity=".25"');
-  }
-  out += `<ellipse cx="205" cy="270" rx="142" ry="16" fill="#050812" opacity=".55"/>`;
-  return out;
-}
 
 function wolf(voidborn = false) {
   let s = p('M61 208Q98 226 111 191L146 166 183 168 212 137 222 99 240 125 260 87 270 127 308 141 288 157 263 158 245 190 252 243 274 260 245 263 225 228 218 202 194 207 168 251 148 263 130 260 153 238 160 206 135 212 110 251 88 260 72 256 95 240 104 211Q78 252 44 220L30 193Z');
@@ -268,7 +239,7 @@ subjects['Wither'] = () => about(thick('M204 262Q196 210 214 176Q236 140 222 110
 subjects['Riptide'] = () => p('M48 214Q84 120 168 132Q236 142 252 108Q262 84 236 70Q300 66 328 112Q354 166 300 196Q246 224 168 214Q104 208 48 214Z', 'url(#metal)', 'stroke="var(--white)" stroke-width="3"') + p('M96 204Q132 164 186 172Q240 180 270 150Q292 126 278 104Q316 132 306 168Q290 200 230 204Z', 'var(--glow)', 'opacity=".7"') + thick('M70 236Q150 220 230 232T352 226', 8, 'url(#metal)') + p('M318 120 352 150 318 180 328 150Z', 'var(--white)') + p('M74 196 40 226 74 256 64 226Z', 'var(--white)');
 subjects['Tidewall'] = () => p('M112 262V108Q112 56 164 52Q148 84 170 96Q196 50 236 60Q218 84 238 100Q266 70 294 92V262Z', 'url(#body)', 'stroke="var(--white)" stroke-width="12"') + p('M130 262V122Q156 112 180 126Q206 110 230 126Q254 112 278 124V262Z', 'var(--mid)') + line('M130 150Q204 126 278 150M130 182Q204 158 278 182M130 214Q204 190 278 214M130 246Q204 222 278 246', 3) + armor('M84 230H124V266H84ZM284 230H324V266H284Z');
 subjects['Rally Cry'] = () => p('M96 194Q110 118 200 104Q262 98 300 64L314 90Q278 128 220 140Q156 150 140 208Z', 'var(--glow)', 'stroke="var(--white)" stroke-width="3"') + p('M300 64 334 42 348 108 314 90Z', 'var(--mid)', 'stroke="var(--glow)" stroke-width="2"') + p('M88 186Q76 214 96 230Q124 238 140 208Z', dark) + line('M150 132 160 150M190 118 196 138M228 112 232 132M266 96 272 116', 3) + line('M358 40Q382 74 362 112M370 22Q404 74 376 132', 4) + line('M120 240 92 266M160 244 150 276', 3, 'opacity=".55"');
-subjects['Landslide'] = () => p('M40 262 300 72 360 96 360 262Z', 'url(#metal)', 'opacity=".75" stroke="var(--white)" stroke-width="3"') + armor('M96 196 132 168 172 176 186 212 156 240 110 234Z') + armor('M190 136 226 118 258 130 262 166 232 182 198 172Z') + armor('M264 84 292 70 318 82 318 112 292 122 268 110Z') + armor('M160 236 186 222 210 232 208 258 180 266 160 256Z') + p('M132 168 150 196 186 212M226 118 236 150 262 166M292 70 296 96 318 112', 'none', 'stroke="var(--glow)" stroke-width="2"') + line('M70 214 50 230M150 150 130 140M236 100 222 88', 3, 'opacity=".6"');
+subjects['Landslide'] = () => p('M40 262 300 72 360 96 360 262Z', 'url(#metal)', 'stroke="var(--white)" stroke-width="3"') + armor('M96 196 132 168 172 176 186 212 156 240 110 234Z') + armor('M190 136 226 118 258 130 262 166 232 182 198 172Z') + armor('M264 84 292 70 318 82 318 112 292 122 268 110Z') + armor('M160 236 186 222 210 232 208 258 180 266 160 256Z') + p('M132 168 150 196 186 212M226 118 236 150 262 166M292 70 296 96 318 112', 'none', 'stroke="var(--glow)" stroke-width="2"') + line('M70 214 50 230M150 150 130 140M236 100 222 88', 3, 'opacity=".6"');
 subjects['Second Wind'] = () => p('M200 248Q118 220 112 140Q112 82 168 64Q236 50 270 102Q300 156 256 202Q226 230 194 214Q162 196 172 158Q182 126 214 130Q238 136 232 160', 'none', 'stroke="var(--glow)" stroke-width="14" stroke-linecap="round"') + group(p('M0 -34Q30 -20 26 10Q14 34 0 40Q-14 34 -26 10Q-30 -20 0 -34Z', 'url(#metal)') + line('M0 -30V38', 2), 'translate(220 152) rotate(40)') + star(124, 236, 11) + star(300, 74, 9);
 subjects['Turning Gale'] = () => [[200, 70, 110, 22], [196, 112, 88, 18], [204, 150, 66, 15], [196, 186, 46, 12], [202, 218, 30, 10], [198, 246, 16, 8]].map(([x, y, rx, ry], i) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${i % 2 ? 'var(--mid)' : 'url(#metal)'}" stroke="var(--glow)" stroke-width="2"/>`).join('') + p('M90 70Q200 120 310 70L196 256Z', 'url(#body)', 'opacity=".35"') + line('M300 104 334 88M318 140 352 136M64 120 96 110M80 160 112 162', 3, 'opacity=".7"') + star(312, 60, 10);
 subjects['Tidestone'] = () => p('M96 196Q100 112 200 92Q300 112 304 196Z', 'url(#metal)', 'stroke="var(--mid)" stroke-width="2"') + line('M200 96V194M150 104 172 194M250 104 228 194M114 140 146 194M286 140 254 194', 3) + p('M92 196H308Q300 250 200 256Q100 250 92 196Z', 'var(--mid)', 'stroke="var(--glow)" stroke-width="2"') + circle(200, 196, 40, 'url(#flare)') + circle(188, 184, 10, 'var(--white)', 'opacity=".8"');
@@ -286,7 +257,7 @@ subjects['Iron Golem'] = () => about(giant('iron'), 'scale(.74 1.12)') + armor('
 subjects['Battle Colossus'] = () => about(giant('battle'), 'scale(1.18 .92)') + armor('M84 104 140 70 150 128ZM316 104 260 70 250 128Z') + group(armor('M-5 -90 5 -90 5 60 -5 60Z') + armor('M-5 -90Q-50 -96 -46 -50Q-26 -66 -5 -60Z'), 'translate(318 160) rotate(18)');
 subjects['Ancient Titan'] = () => about(giant('ancient'), 'rotate(-14) translate(14 10)') + thick('M150 70Q104 40 92 88M242 66Q300 30 314 86', 12, 'url(#metal)') + thick('M150 70Q104 40 92 88M242 66Q300 30 314 86', 2, 'var(--glow)');
 subjects['Worldbreaker Titan'] = () => about(giant('world'), 'translate(0 22) scale(.92)') + circle(200, 50, 46, 'url(#metal)', 'stroke="var(--mid)" stroke-width="3"') + line('M168 34 196 58 186 82M220 26 214 60 236 74', 3) + armor('M132 120 150 76 170 112ZM268 120 250 76 230 112Z');
-subjects['Mountain Behemoth'] = () => p('M64 262 140 92 196 170 248 60 336 262Z', 'var(--mid)', 'opacity=".7"') + about(giant('mountain'), 'translate(0 18) scale(.9)');
+subjects['Mountain Behemoth'] = () => p('M64 262 140 92 196 170 248 60 336 262Z', 'url(#metal)') + about(giant('mountain'), 'translate(0 18) scale(.9)');
 subjects['Radiant Knight'] = () => knight() + towerShield(120, 176, 56) + circle(200, 84, 54, 'none', 'stroke="var(--white)" stroke-width="3" opacity=".7"');
 subjects['Ironclad Mercenary'] = () => mirror(about(knight('mercenary'), 'rotate(-12)')) + group(armor('M0 -40 46 -10 0 20Z') + armor('M-4 -60 4 -60 4 100 -4 100Z'), 'translate(318 134) rotate(-20)');
 subjects['Inferno Knight'] = () => about(knight('inferno'), 'scale(1.06)') + p('M90 262Q110 200 140 236Q150 190 176 226Q196 170 216 222Q240 182 252 232Q278 196 300 262Z', 'var(--glow)', 'opacity=".7"');
@@ -300,10 +271,17 @@ subjects['Tide Serpent'] = () => mirror(serpent(true));
 // Value rim (GDADA run 1, Solarski): the subject is first drawn as a light outline
 // a few pixels wider than itself, so its silhouette separates from the sky by value,
 // not by hue. It sits inside the subject group, so it is part of the figure.
-function rim(subject) {
-  const outline = subject
-    .replace(/ (fill|stroke|stroke-width|stroke-dasharray|opacity)="[^"]*"/g, '')
-    .replace(/<(path|circle|rect|ellipse)/g, '<$1 fill="none" stroke="var(--white)" stroke-width="7"');
+// Large flat subjects whose 7-unit rim drops below a pixel at the 53-59px boards.
+const WIDE_RIM = { 'Mountain Behemoth': 12, Landslide: 12, 'Dark Bargain': 11, 'Flame Serpent': 11 };
+function rim(subject, base = 7) {
+  // A stroked shape (a tentacle, a serpent's body) gets a rim 7 units wider than its own
+  // stroke, so the rim shows outside it instead of hiding inside (run 2: Abyssal Kraken).
+  const outline = subject.replace(/<(path|circle|rect|ellipse)\b([^>]*?)\/>/g, (all, tag, attrs) => {
+    const sw = (attrs.match(/ stroke-width="([\d.]+)"/) || [])[1];
+    const width = /fill="none"/.test(attrs) && sw ? +sw + base : base;
+    const bare = attrs.replace(/ (fill|stroke|stroke-width|stroke-dasharray|opacity)="[^"]*"/g, '');
+    return `<${tag}${bare} fill="none" stroke="var(--white)" stroke-width="${width}"/>`;
+  });
   return `<g opacity=".85">${outline}</g>`;
 }
 // Subjects that measured under 12% of the board window, enlarged about the centre.
@@ -314,25 +292,90 @@ function subjectOf(card) {
   return k ? group(s, `translate(200 160) scale(${k}) translate(-200 -160)`) : s;
 }
 
+// Form shading (GDADA run 2): every filled shape of the subject is drawn again with a
+// gradient running from the scene's light (a soft highlight) to its far side (shadow),
+// so each part reads as a volume. Strokes and unfilled lines are left out.
+function formShade(subject) {
+  return subject.replace(/<(path|circle|rect|ellipse)\b([^>]*?)\/>/g, (all, tag, attrs) => {
+    if (/fill="none"/.test(attrs)) return '';
+    const bare = attrs.replace(/ (fill|stroke|stroke-width|stroke-dasharray|stroke-linecap|stroke-linejoin|opacity)="[^"]*"/g, '');
+    return `<${tag}${bare} fill="url(#form)"/>`;
+  });
+}
+
+// Surface detail (GDADA run 2, "too simple"): marks inside each filled shape, made from
+// the shape's own points so they stay inside it. Shapes drawn with relative commands,
+// or inside transformed groups, are measured in their own coordinates and the marks
+// inherit the same group, so they land in place.
+function shapePoints(tag, attrs) {
+  const num = (k) => { const m = attrs.match(new RegExp(` ${k}="(-?[\\d.]+)"`)); return m ? +m[1] : null; };
+  if (tag === 'circle' || tag === 'ellipse') {
+    const cx = num('cx'), cy = num('cy'), rx = num('r') || num('rx'), ry = num('r') || num('ry');
+    if (cx === null || !rx) return null;
+    return Array.from({ length: 10 }, (_, i) => [cx + rx * Math.cos(i * Math.PI / 5), cy + ry * Math.sin(i * Math.PI / 5)]);
+  }
+  if (tag !== 'path') return null;
+  const d = (attrs.match(/ d="([^"]*)"/) || [])[1];
+  if (!d || /[a-z]/.test(d.replace(/e-?\d/g, ''))) return null; // relative commands: skip
+  const n = (d.match(/-?\d+(\.\d+)?/g) || []).map(Number);
+  const pts = [];
+  for (let i = 0; i + 1 < n.length; i += 2) pts.push([n[i], n[i + 1]]);
+  return pts.length >= 3 ? pts : null;
+}
+function surface(subject, name) {
+  let seed = 0;
+  for (const ch of name) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const f = (v) => Math.round(v * 10) / 10;
+  // Keep the subject's group structure (transforms) and replace each element with its marks.
+  return subject.replace(/<(path|circle|rect|ellipse)\b([^>]*?)\/>/g, (all, tag, attrs) => {
+    if (/fill="none"/.test(attrs)) return '';
+    const pts = shapePoints(tag, attrs);
+    if (!pts) return '';
+    const cx = pts.reduce((a, q) => a + q[0], 0) / pts.length, cy = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+    const size = Math.max(...pts.map((q) => Math.hypot(q[0] - cx, q[1] - cy)));
+    if (size < 18) return '';
+    const metal = /url\(#metal\)/.test(attrs), body = /url\(#body\)/.test(attrs);
+    let out = '';
+    // inner bevel: the shape again, shrunk toward its centre, as a light line
+    if (size >= 26) out += `<g transform="translate(${f(cx)} ${f(cy)}) scale(.84) translate(${f(-cx)} ${f(-cy)})">${all.replace(/ (fill|stroke|stroke-width|opacity|stroke-dasharray)="[^"]*"/g, '').replace(/\/>$/, ' fill="none" stroke="var(--white)" stroke-width="1.2" opacity=".28"/>')}</g>`;
+    const marks = Math.min(6, Math.floor(size / 12));
+    let d = '';
+    for (let i = 0; i < marks; i++) {
+      const a = pts[Math.floor(random() * pts.length)], t = 0.25 + random() * 0.5;
+      const x = a[0] + (cx - a[0]) * t, y = a[1] + (cy - a[1]) * t;
+      if (metal) d += `M${f(x)} ${f(y)}m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0`;      // rivets
+      else if (body) d += `M${f(x - 4)} ${f(y + 1)}q4 -${f(3 + random() * 2)} 8 0`;               // scales / fur
+      else d += `M${f(x)} ${f(y)}l${f(2 + random() * 4)} ${f(2 + random() * 3)}`;                 // grain
+    }
+    if (d) out += `<path d="${d}" fill="none" stroke="${metal ? 'var(--white)' : 'var(--glow)'}" stroke-width="1.3" stroke-linecap="round" opacity="${metal ? '.55' : '.42'}"/>`;
+    if (metal) out += `<path d="M${f(cx - size * 0.35)} ${f(cy - size * 0.2)}q${f(size * 0.3)} -${f(size * 0.16)} ${f(size * 0.55)} -${f(size * 0.08)}" fill="none" stroke="var(--white)" stroke-width="2.2" stroke-linecap="round" opacity=".45"/>`;
+    return out;
+  });
+}
+
 function render(card, index = 0) {
   const palette = palettes[card.element] || palettes.neutral;
   if (!subjects[card.name]) throw new Error(`Missing illustration for ${card.name}`);
   const [bg, mid, glow, white] = palette;
   const title = xml(card.name);
+  const view = scene(card, index, palette);
+  const subject = subjectOf(card);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" role="img" aria-labelledby="title desc">
 <title id="title">${title}</title>
-<desc id="desc">Original Shadow Duel illustration of ${title}, in a ${card.element} fantasy landscape.</desc>
+<desc id="desc">Original Shadow Duel illustration of ${title}: ${card.element}, ${view.describe}.</desc>
 <defs>
-<linearGradient id="sky" x2=".8" y2="1"><stop stop-color="${bg}"/><stop offset=".6" stop-color="${mid}"/><stop offset="1" stop-color="${bg}"/></linearGradient>
+${view.defs}
 <radialGradient id="aura"><stop stop-color="${glow}" stop-opacity=".6"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient>
-<linearGradient id="body" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="${mid}"/><stop offset=".45" stop-color="${bg}"/><stop offset="1" stop-color="#080c16"/></linearGradient>
+<linearGradient id="body" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="${view.flesh[0]}"/><stop offset=".35" stop-color="${view.flesh[1]}"/><stop offset=".75" stop-color="${view.flesh[2]}"/><stop offset="1" stop-color="#080c16"/></linearGradient>
 <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${glow}"/><stop offset=".27" stop-color="${mid}"/><stop offset=".7" stop-color="${bg}"/><stop offset="1" stop-color="${mid}"/></linearGradient>
 <radialGradient id="flare"><stop stop-color="${white}"/><stop offset=".35" stop-color="${glow}"/><stop offset="1" stop-color="${mid}"/></radialGradient>
 <linearGradient id="shade" x2="0" y2="1"><stop offset=".65" stop-color="#050812" stop-opacity="0"/><stop offset="1" stop-color="#050812" stop-opacity=".65"/></linearGradient>
 </defs>
 <g style="--mid:${mid};--glow:${glow};--white:${white}">
-${environment(card, index)}
-<g stroke-linejoin="round">${rim(subjectOf(card))}${subjectOf(card)}</g>
+${view.back}
+<g stroke-linejoin="round"><g transform="${view.transform}">${rim(subject, WIDE_RIM[card.name] || 7)}${subject}${formShade(subject)}${surface(subject, card.name)}</g></g>
+${view.front}
 <rect width="400" height="300" fill="url(#shade)"/>
 <path d="M14 52V14H52M348 14H386V52M14 248V286H52M348 286H386V248" fill="none" stroke="${glow}" opacity=".34"/>
 <path d="M22 30V22H30M370 22H378V30M22 270V278H30M370 278H378V270" fill="none" stroke="${white}" opacity=".5"/>
