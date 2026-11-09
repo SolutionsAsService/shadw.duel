@@ -30,7 +30,7 @@ module.exports = () => ({
   'Stone Guardian': () => {
     const I = Ink(), H = (d, w = 1.8) => I.add(d, w), G = (d, w = 2, c = '#ffe9b0') => I.add(d, w, c);
     let b = defs(['white', 'gold', 'amber', 'wine', 'violet', 'navy', 'deep', 'bronze', 'ash', 'teal', 'ivory']);
-    b += scene(I, { sx: 300, sy: 226, radii: [0, 36, 80, 150, 420], n: [10, 10, 12, 8], cols: [['white', 'gold'], ['gold', 'amber'], ['wine', 'amber'], ['violet', 'deep']], g: ['bronze', 'wine'], gy: [246, 270], streaks: 'M40 70C60 66 78 72 98 68M30 120C50 116 66 122 84 118M220 60C240 56 256 62 276 58M40 190C56 186 66 190 78 188' });
+    b += scene(I, { sx: 300, sy: 226, radii: [0, 36, 80, 150, 420], n: [10, 10, 12, 8], cols: [['white', 'gold'], ['gold', 'amber'], ['wine', 'amber'], ['ash', 'violet']], g: ['bronze', 'wine'], gy: [246, 270], streaks: 'M40 70C60 66 78 72 98 68M30 120C50 116 66 122 84 118M220 60C240 56 256 62 276 58M40 190C56 186 66 190 78 188' });
     const spear = 'M74 254L74 76L66 76L80 34L94 76L86 76L86 254Z';
     const head = 'M106 62L154 58L160 114L104 116Z';
     const torso = 'M92 118C110 108 160 106 176 120L184 236L86 238Z';
@@ -59,7 +59,7 @@ module.exports = () => ({
   'Iron Golem': () => {
     const I = Ink(), H = (d, w = 1.8) => I.add(d, w), G = (d, w = 2, c = '#ffe9b0') => I.add(d, w, c);
     let b = defs(['white', 'gold', 'amber', 'wine', 'violet', 'navy', 'bronze', 'ash', 'steel', 'ivory', 'teal']);
-    b += scene(I, { sx: 96, sy: 104, radii: [0, 32, 72, 140, 420], n: [8, 10, 10, 7], cols: [['white', 'gold'], ['gold', 'amber'], ['wine', 'amber'], ['deep', 'violet']], g: ['bronze', 'wine'], gy: [250, 272], ph: 1, streaks: 'M30 190C50 186 66 192 86 188M120 210C140 206 156 212 176 208M190 40C210 36 226 42 246 38' });
+    b += scene(I, { sx: 96, sy: 104, radii: [0, 32, 72, 140, 420], n: [8, 10, 10, 7], cols: [['white', 'gold'], ['gold', 'amber'], ['wine', 'amber'], ['ash', 'violet']], g: ['bronze', 'wine'], gy: [250, 272], ph: 1, streaks: 'M30 190C50 186 66 192 86 188M120 210C140 206 156 212 176 208M190 40C210 36 226 42 246 38' });
     // barrier: an arc of gold panes cast over the golem
     let arc = '';
     for (let i = 0; i < 14; i++) {
