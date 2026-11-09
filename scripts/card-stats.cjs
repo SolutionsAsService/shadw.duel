@@ -20,7 +20,9 @@ const SOURCES = ["cards.js", "game.js", "bot.js"].map((n) => fs.readFileSync(pat
 function playMatch(seed) {
   const window = { ShadowLobbyUI: {} };
   const document = { getElementById: () => null, addEventListener() {} };
-  const context = vm.createContext({ window, document, console: { log() {}, warn() {}, error: console.error } });
+  // Every effect or ability that throws is caught by the engine and reported here.
+  let failed = 0;
+  const context = vm.createContext({ window, document, console: { log() {}, warn() {}, error: () => { failed++; } } });
   SOURCES.forEach((code) => vm.runInContext(code, context));
   const game = window.ShadowDuelGame, bot = window.ShadowDuelBot;
   game.startLocal({ seed });
@@ -68,7 +70,7 @@ function playMatch(seed) {
     if (!game.act(action)) throw new Error(`seed ${seed}: refused ${JSON.stringify(action)}`);
   }
   const deckOut = state.players.some((p) => p.deck.length === 0 && p.lp > 0) && state.players.every((p) => p.lp > 0);
-  return { seed, winner: state.winner, turns: state.turnNumber, played, held, fx, deckOut, finished: state.gameOver,
+  return { seed, winner: state.winner, turns: state.turnNumber, played, held, fx, failed, deckOut, finished: state.gameOver,
     left: state.players.map((p) => p.deck.length) };
 }
 
@@ -90,6 +92,8 @@ function main(argv) {
   const rows = [...stat.values()].map((s) => ({ ...s, playRate: +(s.plays / (2 * count)).toFixed(3), winRate: s.plays ? +(s.wins / s.plays).toFixed(3) : null }));
   const summary = {
     matches: count, unfinished: res.filter((r) => !r.finished).length,
+    // Card effects or abilities that threw (logged "failed to resolve"); must be 0.
+    failedEffects: res.reduce((n, r) => n + r.failed, 0),
     firstSeatWins: +(res.filter((r) => r.winner === 0).length / count).toFixed(3),
     meanTurns: +(res.reduce((n, r) => n + r.turns, 0) / count).toFixed(1),
     deckOuts: res.filter((r) => r.deckOut).length,
@@ -117,7 +121,7 @@ function main(argv) {
   console.log(`flagged (>=30 plays, win rate outside 30-70%): ${flagged.length}`);
   const out = flag("--json", null);
   if (out) fs.writeFileSync(out, JSON.stringify({ summary, cards: rows }, null, 1) + "\n");
-  return summary.unfinished ? 1 : 0;
+  return summary.unfinished || summary.failedEffects ? 1 : 0;
 }
 
 if (require.main === module) process.exitCode = main(process.argv.slice(2));

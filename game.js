@@ -903,6 +903,9 @@ function playMonster(cardId) {
 
   player.cardsPlayed++;
 
+  trigger(card, "onSummon", playerIndex, emptySlot);
+  checkLifePoints();
+
 
   addLog(
     `${playerName(playerIndex)} summoned ${card.name} `
@@ -1177,6 +1180,15 @@ function performAttack(attackerSlotIndex, targetSlotIndex) {
 
 
   game.selectedAttacker = attackerSlotIndex;
+  // Attack abilities resolve before combat, and only for an attack that will happen.
+  const attackTargetLegal = targetSlotIndex === null || targetSlotIndex === undefined
+    ? !game.players[1 - attackerIndex].field.some((slot) => slot !== null)
+    : !!game.players[1 - attackerIndex].field[targetSlotIndex];
+  if (attackTargetLegal) {
+    trigger(attackerSlot.card, "onAttack", attackerIndex, attackerSlotIndex, targetSlotIndex === undefined ? null : targetSlotIndex);
+    checkLifePoints();
+    if (game.gameOver) { game.selectedAttacker = null; render(); return; }
+  }
 
 
   const defenderField =
@@ -1362,6 +1374,11 @@ function destroyMonster(playerIndex, slotIndex) {
 
   player.field[slotIndex] = null;
 
+  // Death abilities resolve after the slot is empty, at most 8 deep so chains end.
+  game.deathDepth = (game.deathDepth || 0) + 1;
+  if (game.deathDepth <= 8) trigger(slot.card, "onDeath", playerIndex, slotIndex);
+  game.deathDepth--;
+
   player.monstersDestroyed++;
 
 
@@ -1371,6 +1388,23 @@ function destroyMonster(playerIndex, slotIndex) {
 
 }
 
+
+// ============================================================
+// CREATURE ABILITIES (GDADA run 2)
+// ============================================================
+//
+// A creature template may carry onSummon, onAttack, onKill, onDeath and onDawn
+// (start of its controller's turn). They run in a fixed order on both browsers,
+// never draw randomness, and a failing ability is logged, never thrown.
+function trigger(card, hook, playerIndex, ...args) {
+  if (!card || typeof card[hook] !== "function") return;
+  try {
+    card[hook](game, playerIndex, ...args);
+  } catch (error) {
+    console.error(`Error resolving ${card.name} ${hook}:`, error);
+    addLog(`${card.name}'s ability failed to resolve.`);
+  }
+}
 
 // Board changes a card caused this turn, shown on the slot so the player sees
 // what a spell, a Debuff or an attack hit. Cleared once the next turn's player acts.
@@ -1601,6 +1635,8 @@ function attackMonster(defenderSlotIndex) {
     }
 
 
+    trigger(attacker, "onKill", attackerIndex, game.selectedAttacker, defender);
+
     addLog(
       `${attacker.name} destroys ${defender.name}!`
       + (excess > 0
@@ -1685,9 +1721,10 @@ function attackMonster(defenderSlotIndex) {
       .field[game.selectedAttacker]
   ) {
 
-    game.players[attackerIndex]
-      .field[game.selectedAttacker]
-      .hasAttacked = true;
+    const done = game.players[attackerIndex].field[game.selectedAttacker];
+    done.hasAttacked = true;
+    // A Kill ability may grant one more attack this turn (Sky Hunter).
+    if (done.extraAttack) { done.extraAttack = false; done.hasAttacked = false; }
 
   }
 
@@ -1764,6 +1801,10 @@ function startTurn() {
 
       slot.hasAttacked = false;
 
+      slot.extraAttack = false;
+
+      slot.extraAttackUsed = false;
+
       slot.stunned = false;
 
 
@@ -1783,6 +1824,13 @@ function startTurn() {
     }
   );
 
+
+  // Dawn abilities, left to right; a slot emptied by an earlier one is skipped.
+  player.field.slice().forEach((slot, index) => {
+    if (slot && player.field[index] === slot) trigger(slot.card, "onDawn", playerIndex, index);
+  });
+  checkLifePoints();
+  if (game.gameOver) return;
 
   // ----------------------------------------------------------
   // Draw
@@ -2033,6 +2081,7 @@ function startGame() {
 // Shape glyphs so an element never depends on colour alone (Game Accessibility Guidelines).
 const ELEMENT_GLYPHS = { flame: "▲", water: "●", earth: "■", wind: "≋", light: "✦", shadow: "☾", neutral: "○" };
 
+const TRIGGER_RULES = "Abilities: Summon = when it enters play · Attack = when it attacks, before combat · Kill = when it destroys a creature in combat · Death = when it is destroyed · Dawn = at the start of your turn.";
 const ELEMENT_LEGEND = "Marks: ▲ flame · ● water · ■ earth · ≋ wind · ✦ light · ☾ shadow · ○ neutral · G Guard · W Ward · ▲/▼ stat raised/lowered this turn.";
 
 function statClass(value, base) {
@@ -2117,6 +2166,18 @@ function showCardDetails(card) {
   const legend = document.createElement("p");
   legend.className = "mark-legend";
   legend.textContent = ELEMENT_LEGEND;
+  if (card.flavor) {
+    const line = document.createElement("p");
+    line.className = "card-flavor";
+    line.textContent = card.flavor;
+    content.appendChild(line);
+  }
+  if (/^(Summon|Attack|Kill|Death|Dawn):/.test(card.text || "")) {
+    const line = document.createElement("p");
+    line.className = "keyword-rule";
+    line.textContent = TRIGGER_RULES;
+    content.appendChild(line);
+  }
   if (card.rule) {
     const line = document.createElement("p");
     line.className = "card-rule";
@@ -2735,7 +2796,7 @@ window.ShadowDuelGame = {
   canPlay(cardId) {
     return !validateAction({ type: "play", cardId }, isOnline() ? session.localSeat : game.currentPlayer);
   },
-  rules() { return { ...GAME_RULES, keywordDescriptions: { ...KEYWORD_RULES }, markLegend: ELEMENT_LEGEND }; },
+  rules() { return { ...GAME_RULES, keywordDescriptions: { ...KEYWORD_RULES }, markLegend: ELEMENT_LEGEND, triggerRules: TRIGGER_RULES }; },
   snapshot() {
     return JSON.parse(JSON.stringify({
       players: game.players,

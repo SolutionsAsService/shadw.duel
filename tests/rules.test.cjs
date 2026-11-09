@@ -38,7 +38,7 @@ function snapshot(api) { return JSON.parse(JSON.stringify(api.snapshot())); }
 const spellExpectations = {
   'Healing Potion': { heal: 800 },
   'Minor Restoration': { heal: 500, draw: 1 },
-  Fireball: { damage: 500 },
+  Fireball: { damage: 500 },  // the caster's Iron Golem is earth, so no flame buff
   Spark: { damage: 250 },
   'Draw Two': { draw: 2 },
   'Quick Draw': { draw: 1 },
@@ -46,15 +46,15 @@ const spellExpectations = {
   'Stone Skin': { bonus: ['defenseBonus', 400] },
   Windstep: { swift: true },
   'Flame Burst': { damage: 750 },
-  'Void Bolt': { damage: 900 },
+  'Void Bolt': { damage: 900, heal: -200 },
   'Lightning Strike': { damage: 700, draw: 1 },
   Barrier: { shield: 600 },
-  Aegis: { heal: 1000 },
+  Aegis: { heal: 1000, shield: 300 },
   'Arcane Insight': { draw: 3 },
   'Dark Bargain': { heal: -300, draw: 2 },
   Meteor: { damage: 1400 },
-  'Void Collapse': { damage: 1800 },
-  'Divine Renewal': { heal: 1800 },
+  'Void Collapse': { damage: 1800, own: ['tempDef', -200] },
+  'Divine Renewal': { heal: 1800, own: ['tempDef', 200] },
   // Expansion 1. In this harness the caster controls one Iron Golem and the
   // opponent controls nothing, so enemy board spells find no target.
   Scorch: {},
@@ -133,7 +133,9 @@ for (const [name, targetName, property] of [
     } else {
       api.endTurn();
       api.act({ type: 'attack', attacker: 0, target: null });
-      assert.equal(enemy.lp, 8000 - creature.card.atk - 200);
+      // Shadow Stalker's Attack ability adds 300 ATK when it attacks directly.
+      const direct = targetName === 'Shadow Stalker' ? 300 : 0;
+      assert.equal(enemy.lp, 8000 - creature.card.atk - 200 - direct);
       assert.equal(player[property], 200);
     }
   });
@@ -247,7 +249,7 @@ test('combat: winning overflow, tie destruction, losing backlash, Burn and Lifes
   field(api, 'Flame Serpent');
   field(api, 'Ironclad Mercenary', 1);
   api.act({ type: 'attack', attacker: 0, target: 0 });
-  assert.equal(api.state().players[1].lp, 7600); // 200 overflow + 200 Burn.
+  assert.equal(api.state().players[1].lp, 7300); // 200 overflow + 200 Burn + 300 from Flame Serpent's Kill ability.
   assert.equal(api.state().players[1].field[0], null);
   field(api, 'Dread Reaper', 0, 1);
   field(api, 'Ironclad Mercenary', 1);
