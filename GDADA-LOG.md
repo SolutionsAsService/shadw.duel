@@ -509,3 +509,71 @@ Every seat is a separate subagent with its verdict filed under `panel/run2-R<n>/
 | R3 | Readability | PASS (scene light only partly met; no player cost) | none |
 | R3 | Access | PASS | none |
 | R3 | Affordance | PASS (optional: pulse the chip when it fires) | DEFERRED, polish |
+| R3 | Feel (Swink) | PASS (residual: Phoenix's return has no "+1 card" chip; chips do not pulse) | DEFERRED, polish |
+| R3 | Flow (Csikszentmihalyi) | PASS (first-seat edge recorded as frozen; ability text is not shown on field cards, only via "i") | Open item |
+
+R3 seated the four R2 objectors and Flow (first seat in run 2). Lenses and Decisions passed in R2, and nothing they
+judged changed afterwards except in the direction they asked for. Their PASS is carried, not re-sat, and stated here as
+a shortcut.
+
+## Anchor Ledger (run 2)
+
+| Anchor | Used in | Outcome |
+|---|---|---|
+| `Interesting decisions (Sid Meier)` | Seed; M13, M16 | kept: 40 abilities, 0 flagged by balance, decisions per R2 |
+| `The Lenses: surprise, curiosity, ... (Schell, ...)` | Seed; M16, M17 | kept: art shows the ability (about 32 of 40 creatures by Lenses' count) |
+| `Readability: silhouette, contrast, one focal point (Solarski, ...)` | Seed; M14, M17, M20 | kept: every card redrawn; sep < 1.6 0 of 75 |
+| `Affordances, signifiers, feedback (Norman, ...)` | Seed; M19 | kept: trigger chips, panel chips |
+| `Game Feel: input, response, context, polish (Swink)` | Dotted seed; M19 | kept |
+| `Rules, play and culture; meaningful play (Salen and Zimmerman, Rules of Play)` | Dotted target | kept: Feel's response stays inside the existing rules |
+| `Game Accessibility Guidelines: basic, intermediate, advanced` | M18 | kept: 11px/10px enforced by test |
+| `Flow: challenge matched to skill, ... (Csikszentmihalyi, Flow)` | R3 | kept; first-seat edge open (frozen) |
+| `Bot playtesting: perfect bot proves solvable, noisy bot shows the curve` | M13 | kept: 4000 matches per change, 0 thrown effects |
+
+## Stop test (run 2)
+
+- **S1: MET.** No OPEN Frontier items. The deferred items are listed below.
+- **S2: MET, with the stated shortcut.** R3 PASS from every seated critic, including all required Player-first seats
+  (Csikszentmihalyi, Swink, Norman, GAG and Meier, the last carried from R2).
+- **S3: MET.** R3 requested no change.
+- **S4 (ambition push): MET.** M17 redrew every card, 75 of 75. Measured: sep < 1.6 at 53x40 4 -> 0; twins 0;
+  hand-window flags 3 -> 0.
+- **S5: MET.**
+  - The seed's dotted edge `gamefeel -.-> rules` was applied (M19).
+  - The other dotted edges from used anchors were declined: `fun -.-> persuasive`, `cozy -.-> decisions`,
+    `ramp -.-> cozy`, `proc -.-> envstory`, `flow -.-> fun` (carried from run 1).
+- **S6: MET.**
+  - `npm test` 95 pass.
+  - Browser suite 7 of 7, including two-browser WebRTC.
+  - text-fit 0 of 75 at 1280 and 390.
+  - art:check 75.
+  - bot-match seeds 1-20 finish.
+  - card-stats 0 thrown effects.
+- **S7: MET.** Must-haves 6-9 are built and checked.
+  - 6: 40 different abilities; spell riders.
+  - 7: every subject redrawn, with form, light and detail.
+  - 8: 34 setting/time combinations, 4-5 settings per element, composition owned per drawing.
+  - 9: card_art.py clean at every read window apart from noise; text fits at 11px.
+  - Run 1's Must-haves still hold.
+
+**Run 2 status: COMPLETE.**
+
+## Open items after run 2 (owner)
+
+1. **First-seat advantage** (66-70%; the turn rules were frozen in both runs).
+2. **Ability text on field cards:** a field card shows its trigger glyph but not the text. Tap "i" to read it (Flow R3).
+3. **Polish:** pulse a trigger chip when it fires; a "+1 card" chip for Pyre Phoenix's return (Affordance and Feel R3).
+4. **Byte budget:** the assets are 887 KB of the 900 KB budget (116 KB gzipped). The next art pass needs the budget
+   raised or compression.
+5. **Noise:** `noise` flags remain at the 59x44 and 53x40 boards on 33 cards. They come from interior detail; the
+   Readability seat judged them acceptable.
+
+## Carry-Forward (run 2)
+
+- **New abilities:** go in the template as onSummon, onAttack, onKill, onDeath or onDawn. `createCard` copies the hooks,
+  and the face text must start with the matching trigger word (tested).
+- **Drawings:** they live in `scripts/art-subjects/<family>.cjs`. Preview with `scripts/preview-art.cjs`, never by
+  building `assets/`. Several agents can draw at once because each owns one file; the build skips a broken module only
+  under `ART_LENIENT`.
+- **Commits while agents draw:** build the assets in a scratch copy that has only the finished modules, so no commit
+  carries half-drawn art or stale assets.
