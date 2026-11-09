@@ -7,6 +7,7 @@
     "start": "node server.js",
     "test": "node --test tests/*.test.cjs",
     "test:browser": "node tests/browser.cjs",
+    "test:text-fit": "node tests/text-fit.cjs",
     "match": "node scripts/bot-match.cjs",
     "art:check": "node scripts/build-card-art.cjs --check"
   },
