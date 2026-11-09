@@ -218,4 +218,46 @@ Each seat ran as its own subagent, in batches of at most 3, and filed its verdic
 
 ### Panel R2 (WHOLE, build b9a657f, evidence: panel/R2/evidence.md)
 
-_See below; filled from `panel/R2/` when the seats report._
+The seats played from the evidence file, the code, `card-stats` runs of their own and the screenshots. All seven filed.
+
+| Critic (work) | Observed in the build | Verdict | Requested change | Resolution |
+|---|---|---|---|---|
+| Flow (Csikszentmihalyi) | 7 board spells; first seat 67.1%; Titan 73%; tried two bot-only fixes on a scratch copy (71%, 23%) | PASS | none; the freeze's cost recorded (seat edge, Titan) | Open items for the owner |
+| Decisions (Meier) | Board spells create sequencing (Riptide then Scorch); Turning Gale and Second Wind are dominated | OBJECT | Turning Gale to 2; Second Wind to 1, conditional only | ADAPT (M9): Turning Gale KEEP; Second Wind as asked measured 24% (a selection effect), so it is now "otherwise restore 400 LP" |
+| Readability (Solarski) | All 3 R1 requests met; noise flags come from the 1px rim | PASS | advisory: fill Riptide, Rally Cry and Storm Feather; Wither's petals to the mid value | ADAPT (M11) |
+| Access (GAG) | The Ready pill covers W on the phone; the glyph key is hover-only | OBJECT | Marks visible on the phone; a legend | ADAPT (M10) |
+| Affordance (Norman) | Results are readable; the card face teaches the wrong rule ("strongest", no Ward) | OBJECT | Face text names the stat and Ward, with a test; would-hit preview | ADAPT (M10) |
+| Feel (Swink) | R1 requests met; the static outline holds under reduced motion | PASS | note: the bot's removal is cleared by its next action | ADAPT (M10: impacts last the turn) |
+| Learner (Koster) | Patterns 6 -> about 10; relics are reskins in a one-copy shared deck; measures missing | OBJECT (mild) | Effect instrumentation; the bot holds Undertow for a 1000+ ATK target | ADAPT (M9); relic critique logged as an open item (deck building is out of scope) |
+
+### Move M9: no dominated new cards, and the bot measures the board spells
+- **Turning Gale:** cost 3 -> 2. It now beats Fireball when you are behind and loses to it when you are ahead.
+- **Second Wind, built first as Decisions asked** (cost 1, draw 2 only when outnumbered):
+  - It measured **24%**, with 0.67-0.79 held turns per match, because it is only cast in games already being lost.
+  - It is now: draw 2 if outnumbered, otherwise restore 400 LP. That is not dominated by Quick Draw or Healing Potion,
+    and does not dominate them. It measures 48% on both seed ranges.
+- **Bot:** holds Undertow for a 1000+ ATK target. The median ATK it removes is now 1100.
+- **card-stats** prints held turns per match, and the effects.
+  - Riptide and Wither each decided about 315 attacks per 2000 matches.
+  - Tidewall's 2 turned-away attacks show the limit of a bot that never makes a losing attack. Tidewall deters attacks;
+    it does not visibly block them.
+- **Result:** KEEP.
+
+### Move M10: honest card faces, previews, and marks that stay visible
+- **Card faces:** they name the stat and "without Ward", tested at 75 characters or fewer.
+- **Preview:** hovering or focusing a board spell outlines the zones it would hit. A test checks that the preview equals
+  what the spell then hits.
+- **Legend:** in the Rules dialog and every detail panel.
+- **Phone:** marks in a right-hand column, the Ready pill left-aligned, and the Destroyed label wrapped.
+- **Impacts:** they last for the turn they happened in.
+- **Measurement:**
+  - Screenshots `panel/R3/board-*.png`.
+  - `npm test`: 85 pass.
+  - Browser suite: 7 of 7.
+- **Result:** KEEP.
+
+### Move M11: the Readability seat's advisories
+- **Change:** Riptide is one filled crest; the horn and the feather are filled with the light value; Wither's petals are
+  at the mid value.
+- **Measurement:** all four are clean in every window, `noise` included.
+- **Result:** KEEP.
