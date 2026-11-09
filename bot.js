@@ -29,6 +29,14 @@ function score(entry, state) {
     if (card.type === "monster") return 40 + card.cost * 3 + (card.atk + card.def) / 200;
     // A board spell with nothing to hit is held, not wasted.
     if (state && typeof card.canHit === "function" && !card.canHit(state, state.currentPlayer)) return -1;
+    // Big removal waits for a big target (worthAtk), so it is there when the finisher lands.
+    if (state && card.worthAtk && typeof card.targets === "function") {
+      const seat = state.currentPlayer;
+      const hit = card.targets(state, seat)[0];
+      const slot = hit && state.players[hit.seat].field[hit.slot];
+      const atk = slot ? (slot.card.atk || 0) + (slot.card.bonusAtk || 0) + (slot.card.tempAtk || 0) : 0;
+      if (atk < card.worthAtk) return -1;
+    }
     // Removal clears the way before attacks; "before-attacks" spells only help if something can still attack.
     if (state && card.wants === "enemy" && card.timing !== "before-attacks") return 300 + card.cost;
     if (state && card.timing === "before-attacks") {

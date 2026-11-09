@@ -142,7 +142,42 @@ test('Ward now names spells, and every board spell explains its target rule', ()
   for (const t of cards.SPELL_TEMPLATES.filter((s) => s.wants === 'enemy')) {
     assert.ok(t.rule && /Ward/.test(t.rule), `${t.name}: rule names Ward`);
     assert.ok(t.text.length <= 75, `${t.name}: card text fits one line (${t.text.length})`);
+    assert.match(t.text, /without Ward/, `${t.name}: card face names Ward`);
+    assert.match(t.text, /ATK|DEF/, `${t.name}: card face names the stat it picks by`);
   }
+});
+
+test('a board spell previews the zones it would hit, matching what it then hits', () => {
+  const api = engine();
+  field(api, 'Sky Sovereign', 1, 0);     // Ward
+  field(api, 'Tide Serpent', 1, 2);
+  field(api, 'Gloom Mite', 1, 4);
+  const undertow = cards.findCardTemplate('Undertow');
+  assert.deepEqual(plain(undertow.targets(api.state(), 0)), [{ seat: 1, slot: 2 }]);
+  assert.deepEqual(plain(cards.findCardTemplate('Riptide').targets(api.state(), 0)), [{ seat: 1, slot: 2 }, { seat: 1, slot: 4 }]);
+  cast(api, 'Undertow');
+  assert.deepEqual(names(api, 1), ['Sky Sovereign', null, null, null, 'Gloom Mite']);
+});
+
+test('Second Wind restores 400 LP when not outnumbered', () => {
+  const api = engine();
+  api.state().players[0].lp = 5000;
+  cast(api, 'Second Wind');
+  assert.equal(api.state().players[0].hand.length, 0);
+  assert.equal(api.state().players[0].lp, 5400);
+});
+
+test('the bot holds Undertow for a target with 1000 ATK or more', () => {
+  const api = engine();
+  const state = api.state();
+  const undertow = card('Undertow');
+  state.players[0].hand = [undertow];
+  state.players[0].energy = 10;
+  field(api, 'Cinder Wolf', 1, 0);       // 550 ATK: not worth it
+  const pick = () => plain(bot.choose(state, api.legalActions(), bot.rng(1)));
+  assert.deepEqual(pick(), { type: 'end' });
+  field(api, 'Ashen Dragon', 1, 1);      // 1250 ATK
+  assert.deepEqual(pick(), { type: 'play', cardId: undertow.id });
 });
 
 test('the bot holds a board spell with no target and casts it when one exists', () => {

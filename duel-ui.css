@@ -175,13 +175,18 @@ body:has(#lobby-overlay:not(.hidden)), body:has(#game-over-overlay:not(.hidden))
 .zone.impact-destroyed { outline: 3px dashed #ff9b8f; outline-offset: -3px; color: #ffd0c8; font-weight: 700; }
 .card.impact, .zone.impact-destroyed { animation: impact-pulse .6s ease-out 1; }
 @keyframes impact-pulse { from { box-shadow: 0 0 0 6px #ffd27a88; } to { box-shadow: 0 0 0 0 #ffd27a00; } }
+.zone.would-hit { outline: 3px dashed #ffd27a; outline-offset: -2px; position: relative; }
+.zone.would-hit::after { content: "would hit"; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); padding: 0 4px; border-radius: 4px; background: #0d1020e6; color: #ffd27a; font: 700 10px/14px system-ui, sans-serif; white-space: nowrap; pointer-events: none; }
+.mark-legend { font-size: 12px; color: #c9c3da; }
 .card-detail-panel .card-rule { padding: 8px 10px; border-left: 3px solid #ffd27a; background: #ffffff0d; }
 @media (max-width: 760px) {
-  .field .card .card-marks { top: 3px; right: 3px; flex-direction: column; }
-  .field .card-marks span { min-width: 13px; height: 13px; font-size: 10px; }
+  /* A column on the right edge, clear of the cost badge; the state pill sits left of it. */
+  .field .card .card-marks { top: 3px; right: 2px; gap: 1px; flex-direction: column; }
+  .field .card-marks span { min-width: 13px; height: 13px; padding: 0 1px; font-size: 10px; }
+  .field .zone.impact-destroyed { font-size: 10px; line-height: 1.2; overflow-wrap: anywhere; padding: 2px; }
   .field .card .card-name { font-size: 10px; }
   .field .card .card-stats { font-size: 10px; }
   /* A slim pill on the bottom edge of the art, so the 10px label does not cover the subject. */
-  .field .card-state { font-size: 10px; line-height: 12px; top: 40px; padding: 0 2px; background: #151222cc; }
+  .field .card-state { font-size: 10px; line-height: 12px; top: 40px; left: 3px; right: auto; padding: 0 3px; background: #151222cc; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

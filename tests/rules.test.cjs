@@ -64,7 +64,7 @@ const spellExpectations = {
   Tidewall: { own: ['tempDef', 400] },
   'Rally Cry': { own: ['tempAtk', 200] },
   Landslide: {},
-  'Second Wind': { draw: 1 },
+  'Second Wind': { heal: 400 },
   'Turning Gale': { damage: 400 },
 };
 const TOTAL = cards.MONSTER_TEMPLATES.length + cards.SPELL_TEMPLATES.length + cards.RELIC_TEMPLATES.length;

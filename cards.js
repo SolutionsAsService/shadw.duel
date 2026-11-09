@@ -516,6 +516,16 @@ function pickCreature(game, seat, by, limit = Infinity) {
 function enemiesWithoutWard(game, seat) {
   return game.players[seat].field.filter((slot) => slot && !game.hasKeyword(slot.card, "ward"));
 }
+function creatureCount(game, seat) {
+  return game.players[seat].field.filter(Boolean).length;
+}
+// For the hand preview: the zones a board spell would touch if cast now.
+function one(seat, slot) {
+  return slot === -1 ? [] : [{ seat, slot }];
+}
+function all(game, seat, test) {
+  return game.players[seat].field.map((slot, index) => (slot && test(slot) ? { seat, slot: index } : null)).filter(Boolean);
+}
 function noTarget(game, name) {
   game.addLog(`${name}: no enemy creature qualifies; no effect.`);
 }
@@ -837,10 +847,11 @@ const SPELL_TEMPLATES = [
   // ----------------------------------------------------------
   {
     name: "Scorch", icon: "🔥", element: "flame", rarity: "common", cost: 2, type: "spell",
-    text: "Destroy the weakest-DEF enemy creature with 400 DEF or less.",
+    text: "Destroy the lowest-DEF enemy without Ward, if its DEF is 400 or less.",
     rule: "Picks the enemy creature without Ward that has the lowest DEF, if that DEF is 400 or less. On a tie, the leftmost. If none qualifies, nothing happens.",
     wants: "enemy",
     canHit: (game, seat) => pickCreature(game, 1 - seat, "lowest-def", 400) !== -1,
+    targets: (game, seat) => one(1 - seat, pickCreature(game, 1 - seat, "lowest-def", 400)),
     effect: (game, playerIndex) => {
       const foe = 1 - playerIndex, slot = pickCreature(game, foe, "lowest-def", 400);
       if (slot === -1) return noTarget(game, "Scorch");
@@ -850,10 +861,11 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Undertow", icon: "🌊", element: "water", rarity: "rare", cost: 4, type: "spell",
-    text: "Destroy the strongest enemy creature without Ward.",
+    text: "Destroy the highest-ATK enemy creature without Ward.",
     rule: "Picks the enemy creature without Ward that has the highest ATK. On a tie, the leftmost. If none qualifies, nothing happens.",
-    wants: "enemy",
+    wants: "enemy", worthAtk: 1000,
     canHit: (game, seat) => pickCreature(game, 1 - seat, "highest-atk") !== -1,
+    targets: (game, seat) => one(1 - seat, pickCreature(game, 1 - seat, "highest-atk")),
     effect: (game, playerIndex) => {
       const foe = 1 - playerIndex, slot = pickCreature(game, foe, "highest-atk");
       if (slot === -1) return noTarget(game, "Undertow");
@@ -863,10 +875,11 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Wither", icon: "🥀", element: "shadow", rarity: "uncommon", cost: 3, type: "spell",
-    text: "The strongest enemy creature loses 500 ATK and DEF until its next turn.",
+    text: "The highest-ATK enemy without Ward loses 500 ATK/DEF until its next turn.",
     rule: "Picks the enemy creature without Ward that has the highest ATK. On a tie, the leftmost. It loses 500 ATK and 500 DEF until the start of its controller's next turn. If none qualifies, nothing happens.",
     wants: "enemy", timing: "before-attacks",
     canHit: (game, seat) => pickCreature(game, 1 - seat, "highest-atk") !== -1,
+    targets: (game, seat) => one(1 - seat, pickCreature(game, 1 - seat, "highest-atk")),
     effect: (game, playerIndex) => {
       const foe = 1 - playerIndex, slot = pickCreature(game, foe, "highest-atk");
       if (slot === -1) return noTarget(game, "Wither");
@@ -883,6 +896,7 @@ const SPELL_TEMPLATES = [
     rule: "Every enemy creature without Ward loses 300 DEF until the start of its controller's next turn. Cast it before you attack.",
     wants: "enemy", timing: "before-attacks",
     canHit: (game, seat) => enemiesWithoutWard(game, 1 - seat).length > 0,
+    targets: (game, seat) => all(game, 1 - seat, (slot) => !game.hasKeyword(slot.card, "ward")),
     effect: (game, playerIndex) => {
       const foe = 1 - playerIndex, hit = enemiesWithoutWard(game, foe);
       hit.forEach((slot) => {
@@ -898,6 +912,7 @@ const SPELL_TEMPLATES = [
     rule: "Every creature you control gains 400 DEF until the start of your next turn, so it holds through your opponent's attacks.",
     wants: "own",
     canHit: (game, seat) => game.players[seat].field.some(Boolean),
+    targets: (game, seat) => all(game, seat, () => true),
     effect: (game, playerIndex) => {
       const mine = game.players[playerIndex].field.filter(Boolean);
       mine.forEach((slot) => {
@@ -913,6 +928,7 @@ const SPELL_TEMPLATES = [
     rule: "Every creature you control gains 200 ATK until the start of your next turn. Cast it before you attack.",
     wants: "own", timing: "before-attacks",
     canHit: (game, seat) => game.players[seat].field.some(Boolean),
+    targets: (game, seat) => all(game, seat, () => true),
     effect: (game, playerIndex) => {
       const mine = game.players[playerIndex].field.filter(Boolean);
       mine.forEach((slot) => {
@@ -924,10 +940,11 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Landslide", icon: "⛰️", element: "earth", rarity: "epic", cost: 5, type: "spell",
-    text: "Destroy every enemy creature with 500 DEF or less.",
+    text: "Destroy every enemy creature without Ward that has 500 DEF or less.",
     rule: "Destroys every enemy creature without Ward whose DEF is 500 or less. If none qualifies, nothing happens.",
     wants: "enemy",
     canHit: (game, seat) => pickCreature(game, 1 - seat, "lowest-def", 500) !== -1,
+    targets: (game, seat) => all(game, 1 - seat, (slot) => !game.hasKeyword(slot.card, "ward") && game.getMonsterDefense(slot.card, 1 - seat) <= 500),
     effect: (game, playerIndex) => {
       const foe = 1 - playerIndex, field = game.players[foe].field;
       const doomed = field.map((slot, i) => (slot && !game.hasKeyword(slot.card, "ward") && game.getMonsterDefense(slot.card, foe) <= 500 ? i : -1)).filter((i) => i >= 0);
@@ -937,18 +954,21 @@ const SPELL_TEMPLATES = [
     },
   },
   {
-    name: "Second Wind", icon: "🍃", element: "light", rarity: "common", cost: 2, type: "spell",
-    text: "Draw 1 card, or 2 if your opponent has more creatures than you.",
-    rule: "Counts creatures on both sides when it resolves. If your opponent controls more, draw 2; otherwise draw 1.",
+    name: "Second Wind", icon: "🍃", element: "light", rarity: "common", cost: 1, type: "spell",
+    text: "Draw 2 if your opponent has more creatures; otherwise restore 400 LP.",
+    rule: "Counts creatures on both sides when it resolves. If your opponent controls more, draw 2 cards; otherwise restore 400 Life Points.",
     effect: (game, playerIndex) => {
-      const count = (seat) => game.players[seat].field.filter(Boolean).length;
-      const n = count(1 - playerIndex) > count(playerIndex) ? 2 : 1;
-      game.addLog(`Second Wind draws ${n}.`);
-      game.drawCards(playerIndex, n);
+      if (creatureCount(game, 1 - playerIndex) <= creatureCount(game, playerIndex)) {
+        game.addLog("Second Wind: not outnumbered; restore 400 LP.");
+        game.healPlayer(playerIndex, 400);
+        return;
+      }
+      game.addLog("Second Wind draws 2.");
+      game.drawCards(playerIndex, 2);
     },
   },
   {
-    name: "Turning Gale", icon: "🌪️", element: "wind", rarity: "uncommon", cost: 3, type: "spell",
+    name: "Turning Gale", icon: "🌪️", element: "wind", rarity: "uncommon", cost: 2, type: "spell",
     text: "Deal 400 damage, or 800 if you have less life than your opponent.",
     rule: "Compares life totals when it resolves. If yours is lower, deal 800 damage to your opponent; otherwise deal 400.",
     effect: (game, playerIndex) => {
@@ -1084,6 +1104,8 @@ function createCard(template) {
     wants: template.wants || null,
     timing: template.timing || null,
     canHit: template.canHit || null,
+    targets: template.targets || null,
+    worthAtk: template.worthAtk || 0,
 
     effect: template.effect || null,
   };

@@ -362,7 +362,9 @@ function validateAction(action, actor) {
 }
 
 function executeAction(action, actor) {
-  game.impacts = [];
+  // Impacts last for the turn they happened in, so the other player sees everything
+  // a turn did (two spells in a row, or the bot's whole turn) until they act.
+  game.impacts = (game.impacts || []).filter((i) => i.turn === game.turnNumber);
   if (action.type === "play") playCardById(action.cardId);
   else if (action.type === "attack") performAttack(action.attacker, action.target);
   else if (action.type === "end") advanceTurn();
@@ -1370,15 +1372,19 @@ function destroyMonster(playerIndex, slotIndex) {
 }
 
 
-// The last board change a card caused, shown for one render so the player
-// sees what a spell or attack hit. Cleared by the next action.
+// Board changes a card caused this turn, shown on the slot so the player sees
+// what a spell, a Debuff or an attack hit. Cleared once the next turn's player acts.
 function markImpact(playerIndex, slotIndex, kind, name) {
   game.impacts = game.impacts || [];
-  game.impacts.push({ seat: playerIndex, slot: slotIndex, kind, name });
+  game.impacts.push({ seat: playerIndex, slot: slotIndex, kind, name, turn: game.turnNumber });
 }
 
+// The latest impact on a slot that still describes what is there: "destroyed" only
+// for an empty slot, a change only while the same creature holds the slot.
 function impactAt(seat, slot) {
-  return (game.impacts || []).filter((i) => i.seat === seat && i.slot === slot).pop() || null;
+  const here = game.players[seat].field[slot];
+  return (game.impacts || []).filter((i) => i.seat === seat && i.slot === slot
+    && (here ? i.kind !== "destroyed" && i.name === here.card.name : i.kind === "destroyed")).pop() || null;
 }
 
 // ============================================================
@@ -2027,6 +2033,8 @@ function startGame() {
 // Shape glyphs so an element never depends on colour alone (Game Accessibility Guidelines).
 const ELEMENT_GLYPHS = { flame: "▲", water: "●", earth: "■", wind: "≋", light: "✦", shadow: "☾", neutral: "○" };
 
+const ELEMENT_LEGEND = "Marks: ▲ flame · ● water · ■ earth · ≋ wind · ✦ light · ☾ shadow · ○ neutral · G Guard · W Ward · ▲/▼ stat raised/lowered this turn.";
+
 function statClass(value, base) {
   return value > base ? " stat-up" : value < base ? " stat-down" : "";
 }
@@ -2106,6 +2114,9 @@ function showCardDetails(card) {
   const info = display.querySelector(".card-info-button");
   if (info) info.remove();
   content.appendChild(display);
+  const legend = document.createElement("p");
+  legend.className = "mark-legend";
+  legend.textContent = ELEMENT_LEGEND;
   if (card.rule) {
     const line = document.createElement("p");
     line.className = "card-rule";
@@ -2123,6 +2134,7 @@ function showCardDetails(card) {
     line.textContent = "One creature summon per turn. Compare attacking ATK to defending DEF; the loser is destroyed and the difference damages its controller. A tie destroys both. Direct attacks require an empty opposing field.";
     content.appendChild(line);
   }
+  content.appendChild(legend);
   panel.classList.remove("hidden");
   panel.setAttribute("aria-hidden", "false");
   const close = document.getElementById("close-card-detail");
@@ -2363,7 +2375,26 @@ function renderPlayerHand() {
     const el = cardEl(card, playable ? "playable" : "unplayable");
     el.setAttribute("aria-disabled", String(!playable));
     el.onclick = () => act({ type: "play", cardId: card.id });
+    // Board spells show, before casting, which creatures they would hit right now.
+    if (typeof card.targets === "function") {
+      const show = (on) => previewTargets(on ? card.targets(game, seat) : []);
+      el.addEventListener("mouseenter", () => show(true));
+      el.addEventListener("focus", () => show(true));
+      el.addEventListener("mouseleave", () => show(false));
+      el.addEventListener("blur", () => show(false));
+    }
     hand.appendChild(el);
+  });
+}
+
+// targets: [{ seat, slot }]. Marks those zones with a dashed outline and a label.
+function previewTargets(targets) {
+  if (typeof document.querySelectorAll !== "function") return;
+  document.querySelectorAll(".zone.would-hit").forEach((zone) => zone.classList.remove("would-hit"));
+  const me = viewSeat();
+  targets.forEach(({ seat, slot }) => {
+    const zone = document.querySelector(`#${seat === me ? "player" : "opponent"}-field .zone[data-slot="${slot}"]`);
+    if (zone) zone.classList.add("would-hit");
   });
 }
 
@@ -2704,7 +2735,7 @@ window.ShadowDuelGame = {
   canPlay(cardId) {
     return !validateAction({ type: "play", cardId }, isOnline() ? session.localSeat : game.currentPlayer);
   },
-  rules() { return { ...GAME_RULES, keywordDescriptions: { ...KEYWORD_RULES } }; },
+  rules() { return { ...GAME_RULES, keywordDescriptions: { ...KEYWORD_RULES }, markLegend: ELEMENT_LEGEND }; },
   snapshot() {
     return JSON.parse(JSON.stringify({
       players: game.players,
