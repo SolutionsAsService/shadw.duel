@@ -101,3 +101,6 @@ Must-haves 1-5 are built and checked; see S7 in `GDADA-LOG.md`. Success test not
   painterly colour and lighting. This becomes the art direction for all 75 cards (Must-have 10).
 - 9 Nov 2026. "Combine wood and stained no misimpit". The "Woodcut + painterly" pick was a mis-input; the mix is
   woodcut + stained glass. Must-have 10 rewritten.
+- 9 Nov 2026. "I would grade this all a B plus file the lessons learned from making a card game in gdada with some
+  relevant skills/runs remember dada versions need to be like managers of skills etc". The owner grades run 3 B+. The
+  lessons, run-type presets, registry and ledger are filed in SolutionsAsService/gdada.

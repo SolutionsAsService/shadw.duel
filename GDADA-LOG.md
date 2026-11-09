@@ -656,3 +656,7 @@ measured. Recorded here as a shortcut.
 1. Readability noted Wither (three focal points) and Quick Draw (small card, empty window) as next-weakest.
 2. Lenses: the rose-window sunburst recurs on most cards, and Death abilities are seldom drawn.
 3. The first-seat advantage and field-card ability text are carried from run 2.
+
+**Owner grade, run 3:** B+ ("I would grade this all a B plus"). The run is recorded in GDADA's ledger
+(`SolutionsAsService/gdada`, `ledger/runs.jsonl`, id `shadw-duel-3`), and its lessons are L1-L20 in
+`skills/gdada/references/lessons-card-game.md`.
