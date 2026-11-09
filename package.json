@@ -1,6 +1,6 @@
 {
   "name": "shadow-duel",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A simple original two-player card dueling game.",
   "main": "server.js",
   "scripts": {

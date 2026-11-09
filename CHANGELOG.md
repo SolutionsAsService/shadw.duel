@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.4.0 — 2026-11-09
+
+- **Every creature has its own ability** (40 different), firing on Summon, Attack, Kill,
+  Death or Dawn; the spells that only differed in size gained riders. Pyre Phoenix returns
+  to your hand once, Sky Hunter attacks again after a kill, Worldbreaker Titan levels the
+  weak on both sides, and so on (GDADA run 2, `GDADA-LOG.md`).
+- **Every card redrawn.** Each creature is a new drawing whose pose or prop shows its ability;
+  spells are drawn as events and relics as objects with presence. Every card is its own
+  scene (setting, time of day, sun or moon, framing) and its subject is lit from that scene.
+- Hand cards fit their abilities at 11px; field cards show trigger chips and stacked stats;
+  player panels show Barrier, banked bonuses and the turn's changes.
+- `tests/abilities.test.cjs`, `tests/text-fit.cjs` (`npm run test:text-fit`).
+
 ## 1.3.0 — 2026-11-09
 
 - **20 new cards** (75 in all), from the GDADA run in `GDADA-LOG.md`: the first spells that

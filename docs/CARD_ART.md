@@ -38,6 +38,17 @@ user-supplied path. The same API is exported via CommonJS for Node tooling.
 
 ## Editing and verification
 
+Since 1.4.0 the art has three parts:
+- `scripts/art-subjects/*.cjs`: the drawings, one module per family (winged, beasts, giants, knights, casters,
+  spells-attack, spells-guard, spells-trick, relics). Each exports `(kit) => ({ 'Card Name': () => svg })`.
+- `scripts/art-scenes.cjs`: each card's setting, time of day, sun or moon, framing and particles, chosen from its name.
+  Iconic cards are set by hand in `OVERRIDES`.
+- `scripts/build-card-art.cjs`: assembles each card, adding shading, a rim lit from the scene, and a value check on
+  every subject.
+
+To redraw a card without touching `assets/`:
+`node scripts/preview-art.cjs --out /tmp/x --png "Card Name"`, then open `/tmp/x/sheet.png`.
+
 `scripts/build-card-art.cjs` is the editable source of truth. Its subject drawings
 are explicitly keyed to names in `cards.js`; missing illustrations fail generation.
 The deterministic generator writes the individual SVG assets and `card-art.js`.

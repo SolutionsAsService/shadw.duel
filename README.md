@@ -1,6 +1,6 @@
 # Shadow Duel
 
-An original two-player browser card game: **75 illustrated cards**, seven elements,
+An original two-player browser card game: **75 illustrated cards**, each with its own ability or effect, seven elements,
 local pass-the-device play and direct WebRTC duels. No account or build step.
 
 ## Run
@@ -57,6 +57,15 @@ persist and their bonuses affect matching creatures already on the field too.
 | Debuff | On summon, non-Ward enemies lose 100 ATK/DEF until their next turn. |
 | Ward | Blocks hostile creature and spell effects (Debuff, Wither, Undertow, Scorch...), not combat damage. |
 | Lifesteal | Heal the actual combat damage dealt to opposing life, before Burn. |
+
+Every creature also has one ability of its own, named by when it fires: **Summon** (when it
+enters play), **Attack** (when it attacks, before combat), **Kill** (when it destroys a
+creature in combat), **Death** (when it is destroyed) and **Dawn** (at the start of your
+turn). The card face shows the ability; field cards show a ☠ Death, ☀ Dawn, ⚔ Kill or ➶
+Attack chip, and the player panels show a Barrier, a banked "next creature" bonus and this
+turn's life and card changes. Card text uses a few defined terms: non-Ward, ≤, "for a round"
+(until the start of that creature's controller's next turn), strongest (highest ATK) and
+weakest (lowest DEF).
 
 Spells have no target picker. A spell that touches the board picks its creature by a
 fixed rule printed in its detail panel: never a Ward creature, the highest ATK (or lowest
@@ -139,7 +148,7 @@ checks. See [verification receipts](docs/VERIFICATION.md) for completed evidence
 - `bot.js`, `scripts/bot-match.cjs`: computer opponent and headless matches.
 - `game.js`: rules, validation and card/board rendering.
 - `network.js`, `lobby.js`, `server.js`: peer protocol and room lifecycle.
-- `card-art.js`, `assets/`, `scripts/build-card-art.cjs`: original vector artwork.
+- `card-art.js`, `assets/`, `scripts/build-card-art.cjs`, `scripts/art-scenes.cjs`, `scripts/art-subjects/`: original vector artwork (see the art guide).
 - `scripts/card-stats.cjs`: per-card impact over headless matches.
 - `duel-ui.js`, `duel-ui.css`, `index.html`: collection, guide and responsive UI.
 
