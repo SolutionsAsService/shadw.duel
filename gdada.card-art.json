@@ -1,7 +1,7 @@
 {
  "title": "Shadow Duel",
  "art": "assets/cards/*.svg",
- "figure": "svg > g > g[stroke-linejoin]",
+ "figure": "g[data-figure], svg > g > g[stroke-linejoin]:not(:has(g[data-figure]))",
  "windows": {
   "inspect": {
    "w": 226,

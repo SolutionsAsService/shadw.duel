@@ -287,6 +287,22 @@ if (fs.existsSync(subjectDir)) {
   }
 }
 
+// Plates (GDADA run 3, "ink and colour"): whole-card illustrations, background included,
+// from scripts/art-plates/*.cjs, exporting (kit) => ({ 'Card Name': () => svg }). A plate
+// replaces the scene, rim and shading layers; its subject sits in <g data-figure="1">.
+const plates = {};
+const plateDir = path.join(__dirname, 'art-plates');
+if (fs.existsSync(plateDir)) {
+  for (const file of fs.readdirSync(plateDir).filter((f) => f.endsWith('.cjs')).sort()) {
+    try {
+      Object.assign(plates, require(path.join(plateDir, file))(kit));
+    } catch (error) {
+      if (process.env.ART_LENIENT !== '1') throw error;
+      console.error(`skipped ${file}: ${error.message}`);
+    }
+  }
+}
+
 // Value rim (GDADA run 1, Solarski): the subject is first drawn as a light outline
 // a few pixels wider than itself, so its silhouette separates from the sky by value,
 // not by hue. It sits inside the subject group, so it is part of the figure.
@@ -375,7 +391,24 @@ function surface(subject, name) {
   });
 }
 
+function renderPlate(card) {
+  const title = xml(card.name);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" role="img" aria-labelledby="title desc">
+<title id="title">${title}</title>
+<desc id="desc">Original Shadow Duel illustration of ${title}, ${card.element}, ink and colour.</desc>
+<defs>
+<linearGradient id="shade" x2="0" y2="1"><stop offset=".72" stop-color="#050812" stop-opacity="0"/><stop offset="1" stop-color="#050812" stop-opacity=".35"/></linearGradient>
+</defs>
+<g>
+<g stroke-linejoin="round">${plates[card.name]()}</g>
+<rect width="400" height="300" fill="url(#shade)"/>
+</g>
+</svg>
+`;
+}
+
 function render(card, index = 0) {
+  if (plates[card.name]) return renderPlate(card);
   const palette = palettes[card.element] || palettes.neutral;
   if (!subjects[card.name]) throw new Error(`Missing illustration for ${card.name}`);
   const [bg, mid, glow, white] = palette;
