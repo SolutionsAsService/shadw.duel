@@ -194,5 +194,10 @@
   "storm-feather": "wind",
   "sun-sigil": "light",
   "war-banner": "neutral"
- }
+ },
+ "limits": {
+  "detail_hi": 0.95,
+  "off": 0.25
+ },
+ "limits_note": "Woodcut + stained glass (owner's choice, 9 Nov 2026): leading lines are interior edges by design, so 'noise' is the style, not a defect (detail_hi 0.95); compositions are deliberately off-centre (off 0.25). sep, twin, area and kept stay at their defaults and are the guards."
 }

@@ -136,7 +136,11 @@ test('generated files are deterministic and checked-in output is current', () =>
   assert.match(output, /Verified 75 card illustrations/);
 });
 
-test('complete original vector set stays below a 900 KB asset budget', () => {
+test('complete original vector set stays below a 1.25 MB asset budget (and 220 KB gzipped)', () => {
   const bytes = [...generated].filter(([name]) => name.endsWith('.svg')).reduce((sum, [, content]) => sum + Buffer.byteLength(content), 0);
-  assert.ok(bytes < 900_000, `${bytes} bytes`);
+  // Raised from 900 KB for the woodcut + stained glass plates (owner's choice, run 3); SVG
+  // compresses well, so the gzipped size is what a player downloads.
+  assert.ok(bytes < 1_250_000, `${bytes} bytes`);
+  const zipped = require('node:zlib').gzipSync([...generated].filter(([name]) => name.endsWith('.svg')).map(([, c]) => c).join('')).length;
+  assert.ok(zipped < 220_000, `${zipped} bytes gzipped`);
 });
