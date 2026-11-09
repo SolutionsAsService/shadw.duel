@@ -442,6 +442,7 @@ function dealDamage(playerIndex, amount, source = "effect", bypassShield = false
   const damage = Math.min(player.lp, amount - absorbed);
   player.lp -= damage;
   player.damageTaken += damage;
+  notePanel(playerIndex, "lp", -damage);
   if (!bypassShield) game.players[1 - playerIndex].damageDealt += damage;
   addLog(`${playerName(playerIndex)} takes ${damage} damage (${source}).${absorbed ? ` Barrier absorbs ${absorbed}.` : ""}`);
   checkLifePoints();
@@ -464,6 +465,7 @@ function healPlayer(playerIndex, amount) {
   player.lp += amount;
 
   const healed = player.lp - before;
+  notePanel(playerIndex, "lp", healed);
 
   if (healed > 0) {
 
@@ -576,7 +578,8 @@ function drawCards(playerIndex, count) {
     }
 
 
-    player.hand.push(card);
+    notePanel(playerIndex, "cards", 1);
+      player.hand.push(card);
 
   }
 
@@ -1390,6 +1393,35 @@ function destroyMonster(playerIndex, slotIndex) {
 }
 
 
+// What happened to each player this turn, shown on their panel (Feel, run 2): life
+// gained or lost and cards drawn by effects. The draw at the start of a turn is not counted.
+function notePanel(seat, key, amount) {
+  if (!amount || game.quietPanel) return;
+  if (!game.panelTurn || game.panelTurn !== game.turnNumber) { game.panel = [{ lp: 0, cards: 0 }, { lp: 0, cards: 0 }]; game.panelTurn = game.turnNumber; }
+  game.panel[seat][key] += amount;
+}
+
+function panelStatus(seat) {
+  const p = game.players[seat];
+  const now = game.panelTurn === game.turnNumber && game.panel ? game.panel[seat] : { lp: 0, cards: 0 };
+  const chips = [];
+  if (p.shield) chips.push({ text: `Barrier ${p.shield}`, kind: "pending" });
+  if (p.attackBonus || p.defenseBonus) chips.push({ text: `Next creature ${p.attackBonus ? `+${p.attackBonus} ATK` : ""}${p.attackBonus && p.defenseBonus ? " " : ""}${p.defenseBonus ? `+${p.defenseBonus} DEF` : ""}`, kind: "pending" });
+  if (now.lp) chips.push({ text: `${now.lp > 0 ? "+" : "−"}${Math.abs(now.lp)} LP this turn`, kind: now.lp > 0 ? "up" : "down" });
+  if (now.cards) chips.push({ text: `+${now.cards} card${now.cards === 1 ? "" : "s"} this turn`, kind: "up" });
+  return chips;
+}
+
+function renderInfo(element, text, seat) {
+  element.textContent = text;
+  for (const chip of panelStatus(seat)) {
+    const span = document.createElement("span");
+    span.className = `panel-chip panel-chip-${chip.kind}`;
+    span.textContent = chip.text;
+    element.appendChild(span);
+  }
+}
+
 // ============================================================
 // CREATURE ABILITIES (GDADA run 2)
 // ============================================================
@@ -1837,9 +1869,11 @@ function startTurn() {
   // Draw
   // ----------------------------------------------------------
 
+  game.quietPanel = true;
   drawCard(
     playerIndex
   );
+  game.quietPanel = false;
 
 
   player.hasDrawnThisTurn = true;
@@ -2082,8 +2116,17 @@ function startGame() {
 // Shape glyphs so an element never depends on colour alone (Game Accessibility Guidelines).
 const ELEMENT_GLYPHS = { flame: "▲", water: "●", earth: "■", wind: "≋", light: "✦", shadow: "☾", neutral: "○" };
 
-const TRIGGER_RULES = "Abilities: Summon = when it enters play · Attack = when it attacks, before combat · Kill = when it destroys a creature in combat · Death = when it is destroyed · Dawn = at the start of your turn.";
-const ELEMENT_LEGEND = "Marks: ▲ flame · ● water · ■ earth · ≋ wind · ✦ light · ☾ shadow · ○ neutral · G Guard · W Ward · ▲/▼ stat raised/lowered this turn.";
+const TRIGGER_RULES = "Abilities: Summon = when it enters play · Attack = when it attacks, before combat · Kill = when it destroys a creature in combat · Death = when it is destroyed · Dawn = at the start of your turn. Terms: non-Ward = without Ward · ≤ = or less · for a round = until the start of that creature's controller's next turn · strongest = highest ATK · weakest = lowest DEF.";
+const ELEMENT_LEGEND = "Marks: ▲ flame · ● water · ■ earth · ≋ wind · ✦ light · ☾ shadow · ○ neutral · G Guard · W Ward · ➶ Attack, ⚔ Kill, ☠ Death, ☀ Dawn ability · ▲/▼ stat raised/lowered this turn.";
+
+// The trigger an on-field creature still has (Affordance, run 2): Attack, Kill, Death or Dawn.
+const TRIGGER_GLYPHS = { onAttack: ["➶", "Attack"], onKill: ["⚔", "Kill"], onDeath: ["☠", "Death"], onDawn: ["☀", "Dawn"] };
+function triggerChip(card) {
+  const hook = Object.keys(TRIGGER_GLYPHS).find((h) => typeof card[h] === "function");
+  if (!hook) return "";
+  const [glyph, word] = TRIGGER_GLYPHS[hook];
+  return `<span class="mark-trigger" title="${word}: ${escapeHTML(card.text || "")}">${glyph}</span>`;
+}
 
 function statClass(value, base) {
   return value > base ? " stat-up" : value < base ? " stat-down" : "";
@@ -2109,7 +2152,7 @@ function cardEl(card, extraClass, playerIndex = null) {
   div.innerHTML = `
     <div class="card-cost" title="Energy cost">${getCardCost(card)}</div>
     <div class="card-element">${escapeHTML(card.element || "neutral")}</div>
-    <div class="card-marks" aria-hidden="true"><span class="mark-element" title="${escapeHTML(card.element || "neutral")}">${ELEMENT_GLYPHS[card.element] || ELEMENT_GLYPHS.neutral}</span>${hasKeyword(card, "guard") ? '<span class="mark-keyword" title="Guard">G</span>' : ""}${hasKeyword(card, "ward") ? '<span class="mark-keyword" title="Ward">W</span>' : ""}</div>
+    <div class="card-marks" aria-hidden="true"><span class="mark-element" title="${escapeHTML(card.element || "neutral")}">${ELEMENT_GLYPHS[card.element] || ELEMENT_GLYPHS.neutral}</span>${hasKeyword(card, "guard") ? '<span class="mark-keyword" title="Guard">G</span>' : ""}${hasKeyword(card, "ward") ? '<span class="mark-keyword" title="Ward">W</span>' : ""}${triggerChip(card)}</div>
     ${art}
     <div class="card-name">${escapeHTML(card.name)}</div>
     <div class="card-rarity">${escapeHTML(card.rarity || "common")}</div>
@@ -2173,7 +2216,7 @@ function showCardDetails(card) {
     line.textContent = card.flavor;
     content.appendChild(line);
   }
-  if (/^(Summon|Attack|Kill|Death|Dawn):/.test(card.text || "")) {
+  if (/^(Summon|Attack|Kill|Death|Dawn):|non-Ward|≤|for a round|strongest|weakest/i.test(card.text || "")) {
     const line = document.createElement("p");
     line.className = "keyword-rule";
     line.textContent = TRIGGER_RULES;
@@ -2233,10 +2276,10 @@ function renderOpponentInfo() {
   if (!element) return;
 
 
-  element.textContent =
+  renderInfo(element,
     `${playerName(opp)} — `
-    + `${opponent.lp} LP${opponent.shield ? ` + ${opponent.shield} shield` : ""} `
-    + `(${opponent.deck.length} cards left)`;
+    + `${opponent.lp} LP `
+    + `(${opponent.deck.length} cards left)`, opp);
 
 }
 
@@ -2263,11 +2306,11 @@ function renderPlayerInfo() {
   if (!element) return;
 
 
-  element.textContent =
+  renderInfo(element,
     `${playerName(seat)} — `
-    + `${player.lp} LP${player.shield ? ` + ${player.shield} shield` : ""} `
+    + `${player.lp} LP `
     + `(${player.deck.length} cards left) `
-    + `— Energy ${player.energy}/${player.maxEnergy}`;
+    + `— Energy ${player.energy}/${player.maxEnergy}`, seat);
 
 }
 

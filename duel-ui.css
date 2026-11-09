@@ -136,7 +136,7 @@ body:has(#lobby-overlay:not(.hidden)), body:has(#game-over-overlay:not(.hidden))
   .field .card .card-cost { width: 17px; height: 17px; font-size: 9px; top: 3px; left: 3px; }
   .field .card-info-button { width: 24px; height: 24px; font-size: 12px; bottom: 2px; }
   .field .card-state { font-size: 7px; top: 19px; }
-  #player-hand { min-height: 238px; padding: 8px 3px; scroll-snap-type: x proximity; }
+  #player-hand { min-height: 262px; padding: 8px 3px; scroll-snap-type: x proximity; }
   #player-hand .card { width: 134px; height: 226px; flex: 0 0 134px; scroll-snap-align: start; }
   #player-hud { gap: 6px; padding: 8px; }
   #player-hud .hud-panel { min-width: 0; }
@@ -181,9 +181,15 @@ body:has(#lobby-overlay:not(.hidden)), body:has(#game-over-overlay:not(.hidden))
 /* Abilities need 3-4 lines on a hand card (GDADA run 2): rarity moves to the detail panel,
    the art window is a little shorter, and text starts at the top so nothing is cut above. */
 #player-hand .card .card-rarity { display: none; }
-#player-hand .card { height: 232px; }
+#player-hand .card { height: 256px; }
 #player-hand .card .card-icon { height: 80px; min-height: 80px; }
-#player-hand .card .card-text { align-items: flex-start; font-size: 9px; line-height: 1.25; }
+#player-hand .card .card-text { align-items: flex-start; font-size: 11px; line-height: 1.22; }
+#player-hand .card .card-keywords { font-size: 10px; }
+.card-marks .mark-trigger { border-color: #9fe0ff99; color: #cdefff; }
+.panel-chip { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 9px; font-size: 11px; line-height: 18px; background: #ffffff14; border: 1px solid #ffffff2e; }
+.panel-chip-pending { border-color: #ffd27a99; color: #ffe2a6; }
+.panel-chip-up { border-color: #8ff0a899; color: #b5f5c6; }
+.panel-chip-down { border-color: #ff9b8f99; color: #ffc2ba; }
 .mark-legend { font-size: 12px; color: #c9c3da; }
 .card-detail-panel .card-rule { padding: 8px 10px; border-left: 3px solid #ffd27a; background: #ffffff0d; }
 @media (max-width: 760px) {

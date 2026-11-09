@@ -93,6 +93,7 @@ function again(game, seat, index, name) {
   if (!slot || slot.extraAttackUsed) return;
   slot.extraAttack = true;
   slot.extraAttackUsed = true;
+  game.markImpact(seat, index, "boosted", slot.card.name);
   game.addLog(`${name} may attack once more this turn.`);
 }
 function chill(game, seat, target, def, name) {
@@ -219,7 +220,7 @@ const MONSTER_TEMPLATES = [
     atk: 700,
     def: 400,
     keywords: ["burn"],
-    text: "Kill: deal half the destroyed creature's ATK to your opponent.",
+    text: "Kill: deal half the victim's ATK to your opponent.",
     flavor: "Its attacks leave burning wounds.",
     onKill: (game, seat, ...args) => { const half = Math.floor(((args[1] && args[1].atk) || 0) / 2); game.dealDamage(1 - seat, half, "Flame Serpent"); },
 
@@ -234,7 +235,7 @@ const MONSTER_TEMPLATES = [
     atk: 850,
     def: 650,
     keywords: ["burn"],
-    text: "Summon: your other flame creatures gain +200 ATK until your next turn.",
+    text: "Summon: other flame creatures +200 ATK for a round.",
     flavor: "A heavily armed warrior surrounded by fire.",
     onSummon: (game, seat, ...args) => { teamBuff(game, seat, args[0], (c) => c.element === "flame", 200, 0, "Inferno Knight"); },
 
@@ -249,7 +250,7 @@ const MONSTER_TEMPLATES = [
     atk: 1250,
     def: 800,
     keywords: ["burn"],
-    text: "Summon: destroy the lowest-DEF enemy without Ward with 400 DEF or less.",
+    text: "Summon: destroy the weakest non-Ward enemy (≤400 DEF).",
     flavor: "A devastating dragon born from the remains of an ancient fire.",
     onSummon: (game, seat, ...args) => { destroyPick(game, seat, "lowest-def", 400, "Ashen Dragon"); },
 
@@ -284,7 +285,7 @@ const MONSTER_TEMPLATES = [
     atk: 450,
     def: 500,
     keywords: ["guard"],
-    text: "Summon: your creatures gain +200 DEF until your next turn.",
+    text: "Summon: your creatures +200 DEF for a round.",
     flavor: "Its flowing body absorbs incoming attacks.",
     onSummon: (game, seat, ...args) => { teamBuff(game, seat, -1, () => true, 0, 200, "Tide Serpent"); },
 
@@ -314,7 +315,7 @@ const MONSTER_TEMPLATES = [
     atk: 1050,
     def: 1000,
     keywords: ["guard"],
-    text: "Death: drag down the lowest-DEF enemy without Ward with 400 DEF or less.",
+    text: "Death: drag down the weakest non-Ward enemy (≤400 DEF).",
     flavor: "A massive creature from the deepest waters.",
     onDeath: (game, seat, ...args) => { destroyPick(game, seat, "lowest-def", 400, "Deep Sea Leviathan"); },
 
@@ -329,7 +330,7 @@ const MONSTER_TEMPLATES = [
     atk: 1400,
     def: 1200,
     keywords: ["guard"],
-    text: "Summon: destroy every enemy without Ward that has 300 DEF or less.",
+    text: "Summon: destroy every non-Ward enemy with ≤300 DEF.",
     flavor: "An ancient monster capable of overwhelming entire battlefields.",
     onSummon: (game, seat, ...args) => { destroyAll(game, 1 - seat, 300, "Abyssal Kraken"); },
 
@@ -409,7 +410,7 @@ const MONSTER_TEMPLATES = [
     atk: 1550,
     def: 1450,
     keywords: ["guard"],
-    text: "Summon: destroy every other creature without Ward with 300 DEF or less.",
+    text: "Summon: destroy every other non-Ward creature ≤300 DEF.",
     flavor: "An ancient titan capable of reshaping the battlefield.",
     onSummon: (game, seat, ...args) => { destroyAll(game, 1 - seat, 300, "Worldbreaker Titan"); destroyAll(game, seat, 300, "Worldbreaker Titan", args[0]); },
 
@@ -459,7 +460,7 @@ const MONSTER_TEMPLATES = [
     atk: 800,
     def: 500,
     keywords: ["swift", "burn"],
-    text: "Summon: deal 150 damage for each wind creature you control.",
+    text: "Summon: 150 damage per wind creature you control.",
     flavor: "Lightning crackles across its wings.",
     onSummon: (game, seat, ...args) => { const n = count(game, seat, (c) => c.element === "wind"); game.dealDamage(1 - seat, 150 * n, "Storm Drake"); },
 
@@ -474,7 +475,7 @@ const MONSTER_TEMPLATES = [
     atk: 1100,
     def: 750,
     keywords: [],
-    text: "Summon: enemies without Ward lose 200 DEF until their next turn.",
+    text: "Summon: non-Ward enemies −200 DEF for a round.",
     flavor: "A giant formed from a living storm.",
     onSummon: (game, seat, ...args) => { weakenAll(game, seat, 200, "Tempest Giant"); },
 
@@ -489,7 +490,7 @@ const MONSTER_TEMPLATES = [
     atk: 1350,
     def: 950,
     keywords: ["swift", "ward"],
-    text: "Attack: another wind creature that already attacked may attack again.",
+    text: "Attack: a wind ally that attacked may attack again.",
     flavor: "Master of the upper skies.",
     onAttack: (game, seat, ...args) => { rally(game, seat, args[0], (c) => c.element === "wind", "Sky Sovereign"); },
 
@@ -699,7 +700,7 @@ const MONSTER_TEMPLATES = [
     atk: 1350,
     def: 1200,
     keywords: ["guard"],
-    text: "Summon: draw a card for each other creature you control (up to 2).",
+    text: "Summon: draw 1 per other creature you control (max 2).",
     flavor: "A legendary being from before recorded history.",
     onSummon: (game, seat, ...args) => { game.drawCards(seat, Math.min(2, count(game, seat, () => true) - 1)); },
 
@@ -712,22 +713,22 @@ const MONSTER_TEMPLATES = [
   // ----------------------------------------------------------
 
   { name: "Gloom Mite", icon: "🕷️", element: "shadow", rarity: "common", cost: 1, atk: 300, def: 250,
-    keywords: ["lifesteal"], text: "Death: your opponent loses 150 LP and you restore 150 LP.",
+    keywords: ["lifesteal"], text: "Death: drain 150 LP from your opponent.",
     flavor: "A tick of living dusk that feeds on every blow.",
     onDeath: (game, seat, ...args) => { game.dealDamage(1 - seat, 150, "Gloom Mite"); game.healPlayer(seat, 150); },
     },
   { name: "Lantern Bearer", icon: "🏮", element: "light", rarity: "common", cost: 2, atk: 400, def: 450,
-    keywords: ["heal"], text: "Dawn: restore 100 LP for each light creature you control.",
+    keywords: ["heal"], text: "Dawn: restore 100 LP per light creature you control.",
     flavor: "Carries the dawn into the longest night.",
     onDawn: (game, seat, ...args) => { game.healPlayer(seat, 100 * count(game, seat, (c) => c.element === "light")); },
     },
   { name: "Mossback Tortoise", icon: "🐢", element: "earth", rarity: "common", cost: 1, atk: 200, def: 450,
-    keywords: ["guard"], text: "Death: your creatures gain +300 DEF until your next turn.",
+    keywords: ["guard"], text: "Death: your creatures +300 DEF for a round.",
     flavor: "A boulder that decided to walk.",
     onDeath: (game, seat, ...args) => { teamBuff(game, seat, -1, () => true, 0, 300, "Mossback Tortoise"); },
     },
   { name: "Brine Witch", icon: "🧙", element: "water", rarity: "uncommon", cost: 4, atk: 700, def: 650,
-    keywords: ["debuff", "lifesteal"], text: "Dawn: the highest-ATK enemy without Ward loses 200 DEF this turn.",
+    keywords: ["debuff", "lifesteal"], text: "Dawn: the strongest non-Ward enemy −200 DEF this turn.",
     flavor: "Her tide pulls strength out of everything it touches.",
     onDawn: (game, seat, ...args) => { weakenPick(game, seat, 0, 200, "Brine Witch"); },
     },
@@ -737,7 +738,7 @@ const MONSTER_TEMPLATES = [
     onDeath: (game, seat, ...args) => { rebirth(game, seat, this, "Pyre Phoenix"); },
     },
   { name: "Gale Harpy", icon: "🪶", element: "wind", rarity: "uncommon", cost: 4, atk: 750, def: 450,
-    keywords: ["swift", "debuff"], text: "Attack: your other wind creatures gain +100 ATK until your next turn.",
+    keywords: ["swift", "debuff"], text: "Attack: other wind creatures +100 ATK for a round.",
     flavor: "Shrieks down out of the storm before anyone can brace.",
     onAttack: (game, seat, ...args) => { teamBuff(game, seat, args[0], (c) => c.element === "wind", 100, 0, "Gale Harpy"); },
     },
@@ -831,7 +832,7 @@ const SPELL_TEMPLATES = [
     rarity: "common",
     cost: 2,
     type: "spell",
-    text: "Deal 500 damage. Your flame creatures gain +100 ATK this turn.",
+    text: "Deal 500 damage. Flame creatures +100 ATK this turn.",
 
     effect: (game, playerIndex) => {
       game.dealDamage(1 - playerIndex, 500, "spell");
@@ -846,7 +847,7 @@ const SPELL_TEMPLATES = [
     rarity: "common",
     cost: 1,
     type: "spell",
-    text: "Deal 250 damage. If you control a wind creature, draw a card.",
+    text: "Deal 250 damage. Draw a card if you control wind.",
 
     effect: (game, playerIndex) => {
       game.dealDamage(1 - playerIndex, 250, "spell");
@@ -926,7 +927,7 @@ const SPELL_TEMPLATES = [
     rarity: "uncommon",
     cost: 2,
     type: "spell",
-    text: "Your creatures can attack the turn they are summoned this turn. Does not grant a second attack.",
+    text: "Your creatures may attack on the turn they arrive.",
 
     effect: (game, playerIndex) => {
       const player = game.players[playerIndex];
@@ -948,7 +949,7 @@ const SPELL_TEMPLATES = [
     rarity: "uncommon",
     cost: 3,
     type: "spell",
-    text: "Deal 750 damage, or 1000 if you control a flame creature.",
+    text: "Deal 750 damage, or 1000 with a flame creature out.",
 
     effect: (game, playerIndex) => {
       game.dealDamage(1 - playerIndex, count(game, playerIndex, (c) => c.element === "flame") ? 1000 : 750, "spell");
@@ -977,7 +978,7 @@ const SPELL_TEMPLATES = [
     rarity: "rare",
     cost: 3,
     type: "spell",
-    text: "Deal 700 damage directly to your opponent and draw 1 card.",
+    text: "Deal 700 damage and draw a card.",
 
     effect: (game, playerIndex) => {
       game.dealDamage(1 - playerIndex, 700, "spell");
@@ -998,7 +999,7 @@ const SPELL_TEMPLATES = [
     rarity: "uncommon",
     cost: 2,
     type: "spell",
-    text: "Absorb the next 600 damage until the start of your next turn.",
+    text: "Gain a 600 Barrier until your next turn.",
 
     effect: (game, playerIndex) => {
       const player = game.players[playerIndex];
@@ -1014,7 +1015,7 @@ const SPELL_TEMPLATES = [
     rarity: "rare",
     cost: 3,
     type: "spell",
-    text: "Restore 1000 LP and gain a 300 Barrier until your next turn.",
+    text: "Restore 1000 LP and gain a 300 Barrier.",
 
     effect: (game, playerIndex) => {
       game.healPlayer(playerIndex, 1000);
@@ -1069,7 +1070,7 @@ const SPELL_TEMPLATES = [
     rarity: "epic",
     cost: 5,
     type: "spell",
-    text: "Deal 1400 damage and destroy every enemy without Ward with 200 DEF or less.",
+    text: "Deal 1400 damage; destroy non-Ward enemies ≤200 DEF.",
 
     effect: (game, playerIndex) => {
       game.dealDamage(1 - playerIndex, 1400, "spell");
@@ -1084,7 +1085,7 @@ const SPELL_TEMPLATES = [
     rarity: "epic",
     cost: 6,
     type: "spell",
-    text: "Deal 1800 damage. Your creatures lose 200 DEF until your next turn.",
+    text: "Deal 1800 damage. Your creatures −200 DEF for a round.",
 
     effect: (game, playerIndex) => {
       game.dealDamage(1 - playerIndex, 1800, "spell");
@@ -1099,7 +1100,7 @@ const SPELL_TEMPLATES = [
     rarity: "epic",
     cost: 5,
     type: "spell",
-    text: "Restore 1800 LP. Your creatures gain +200 DEF until your next turn.",
+    text: "Restore 1800 LP. Your creatures +200 DEF for a round.",
 
     effect: (game, playerIndex) => {
       game.healPlayer(playerIndex, 1800);
@@ -1112,7 +1113,7 @@ const SPELL_TEMPLATES = [
   // ----------------------------------------------------------
   {
     name: "Scorch", icon: "🔥", element: "flame", rarity: "common", cost: 2, type: "spell",
-    text: "Destroy the lowest-DEF enemy without Ward, if its DEF is 400 or less.",
+    text: "Destroy the lowest-DEF non-Ward enemy, if ≤400 DEF.",
     rule: "Picks the enemy creature without Ward that has the lowest DEF, if that DEF is 400 or less. On a tie, the leftmost. If none qualifies, nothing happens.",
     wants: "enemy",
     canHit: (game, seat) => pickCreature(game, 1 - seat, "lowest-def", 400) !== -1,
@@ -1126,7 +1127,7 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Undertow", icon: "🌊", element: "water", rarity: "rare", cost: 4, type: "spell",
-    text: "Destroy the highest-ATK enemy creature without Ward.",
+    text: "Destroy the highest-ATK non-Ward enemy.",
     rule: "Picks the enemy creature without Ward that has the highest ATK. On a tie, the leftmost. If none qualifies, nothing happens.",
     wants: "enemy", worthAtk: 1000,
     canHit: (game, seat) => pickCreature(game, 1 - seat, "highest-atk") !== -1,
@@ -1140,7 +1141,7 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Wither", icon: "🥀", element: "shadow", rarity: "uncommon", cost: 3, type: "spell",
-    text: "The highest-ATK enemy without Ward loses 500 ATK/DEF until its next turn.",
+    text: "The strongest non-Ward enemy −500 ATK/DEF for a round.",
     rule: "Picks the enemy creature without Ward that has the highest ATK. On a tie, the leftmost. It loses 500 ATK and 500 DEF until the start of its controller's next turn. If none qualifies, nothing happens.",
     wants: "enemy", timing: "before-attacks",
     canHit: (game, seat) => pickCreature(game, 1 - seat, "highest-atk") !== -1,
@@ -1157,7 +1158,7 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Riptide", icon: "🌀", element: "wind", rarity: "common", cost: 2, type: "spell",
-    text: "Enemy creatures without Ward lose 300 DEF until their next turn.",
+    text: "Non-Ward enemies −300 DEF for a round.",
     rule: "Every enemy creature without Ward loses 300 DEF until the start of its controller's next turn. Cast it before you attack.",
     wants: "enemy", timing: "before-attacks",
     canHit: (game, seat) => enemiesWithoutWard(game, 1 - seat).length > 0,
@@ -1205,7 +1206,7 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Landslide", icon: "⛰️", element: "earth", rarity: "epic", cost: 5, type: "spell",
-    text: "Destroy every enemy creature without Ward that has 500 DEF or less.",
+    text: "Destroy every non-Ward enemy with ≤500 DEF.",
     rule: "Destroys every enemy creature without Ward whose DEF is 500 or less. If none qualifies, nothing happens.",
     wants: "enemy",
     canHit: (game, seat) => pickCreature(game, 1 - seat, "lowest-def", 500) !== -1,
@@ -1220,7 +1221,7 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Second Wind", icon: "🍃", element: "light", rarity: "common", cost: 1, type: "spell",
-    text: "Draw 2 if your opponent has more creatures; otherwise restore 400 LP.",
+    text: "Outnumbered: draw 2. Otherwise: restore 400 LP.",
     rule: "Counts creatures on both sides when it resolves. If your opponent controls more, draw 2 cards; otherwise restore 400 Life Points.",
     effect: (game, playerIndex) => {
       if (creatureCount(game, 1 - playerIndex) <= creatureCount(game, playerIndex)) {
@@ -1234,7 +1235,7 @@ const SPELL_TEMPLATES = [
   },
   {
     name: "Turning Gale", icon: "🌪️", element: "wind", rarity: "uncommon", cost: 2, type: "spell",
-    text: "Deal 400 damage, or 800 if you have less life than your opponent.",
+    text: "Deal 400 damage, or 800 if you have less LP.",
     rule: "Compares life totals when it resolves. If yours is lower, deal 800 damage to your opponent; otherwise deal 400.",
     effect: (game, playerIndex) => {
       const behind = game.players[playerIndex].lp < game.players[1 - playerIndex].lp;

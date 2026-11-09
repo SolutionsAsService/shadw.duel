@@ -142,7 +142,7 @@ test('Ward now names spells, and every board spell explains its target rule', ()
   for (const t of cards.SPELL_TEMPLATES.filter((s) => s.wants === 'enemy')) {
     assert.ok(t.rule && /Ward/.test(t.rule), `${t.name}: rule names Ward`);
     assert.ok(t.text.length <= 75, `${t.name}: card text fits one line (${t.text.length})`);
-    assert.match(t.text, /without Ward/, `${t.name}: card face names Ward`);
+    assert.match(t.text, /non-Ward|without Ward/i, `${t.name}: card face names Ward`);
     assert.match(t.text, /ATK|DEF/, `${t.name}: card face names the stat it picks by`);
   }
 });

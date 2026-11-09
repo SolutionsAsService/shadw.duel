@@ -1,5 +1,5 @@
 // Every card's text fits its hand card at 1280 and 390 px (GDADA run 2). Needs a running server: node tests/text-fit.cjs
-// Exits 1 if any card's text is clipped or overlaps the row below it.
+// Exits 1 if any card's text is clipped, overlaps the row below it, or is under 11px (keywords under 10px).
 const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch();
@@ -22,7 +22,10 @@ const { chromium } = require('playwright');
           const tb = t.getBoundingClientRect(), cb = el.getBoundingClientRect();
           const clipped = t.scrollHeight > t.clientHeight + 1;
           const overlap = next && next.textContent.trim() && tb.bottom > next.getBoundingClientRect().top + 1;
-          if (clipped || overlap || tb.bottom > cb.bottom) out.push(el.dataset.cardName);
+          // Access (Game Accessibility Guidelines, readable default font size): text 11px+, keywords 10px+.
+          const small = parseFloat(getComputedStyle(t).fontSize) < 11
+            || (next && next.classList.contains('card-keywords') && parseFloat(getComputedStyle(next).fontSize) < 10);
+          if (clipped || overlap || small || tb.bottom > cb.bottom) out.push(el.dataset.cardName);
         }
       }
       return [...new Set(out)];

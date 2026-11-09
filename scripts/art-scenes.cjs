@@ -146,7 +146,15 @@ function backdrop(p, col) {
   const body = time === 'night' ? col.white : mix(col.white, '#fff3c4', 0.5);
   if (setting !== 'cavern' && setting !== 'temple') {
     out += `<circle cx="${sun.x}" cy="${sun.y}" r="70" fill="url(#sunGlow)"/>`;
-    out += `<circle cx="${sun.x}" cy="${sun.y}" r="${time === 'night' ? 13 : 17}" fill="${body}" opacity=".9"/>`;
+    if (time === 'night') out += `<circle cx="${sun.x}" cy="${sun.y}" r="13" fill="${body}" opacity=".9"/>`;
+    else {
+      // A sun, not a pale disc (Lenses, run 2): warm, larger, with rays.
+      const warm = time === 'day' ? '#fff1b8' : time === 'dawn' ? '#ffc98a' : '#ff9a5c';
+      let rays = '';
+      for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; rays += `M${r1(sun.x + Math.cos(a) * 26)} ${r1(sun.y + Math.sin(a) * 26)}L${r1(sun.x + Math.cos(a) * 38)} ${r1(sun.y + Math.sin(a) * 38)}`; }
+      out += `<path d="${rays}" stroke="${warm}" stroke-width="3" stroke-linecap="round" opacity=".55"/>`;
+      out += `<circle cx="${sun.x}" cy="${sun.y}" r="21" fill="${warm}" opacity=".95"/><circle cx="${sun.x}" cy="${sun.y}" r="14" fill="#fffbe8"/>`;
+    }
     if (time === 'night') out += `<circle cx="${sun.x + 5}" cy="${sun.y - 3}" r="11" fill="${col.top}" opacity=".85"/>`;
   }
   if (setting === 'peaks') {
@@ -258,6 +266,7 @@ function scene(card, index, palette, ownComposition = false) {
   const defs = `<linearGradient id="sky" x2="0" y2="1"><stop stop-color="${col.top}"/><stop offset="${(p.horizon / 300).toFixed(2)}" stop-color="${col.horizon}"/><stop offset="1" stop-color="${mix(bg, '#000000', 0.3)}"/></linearGradient>`
     + `<radialGradient id="sunGlow"><stop stop-color="${p.time === 'night' ? white : mix(white, tint.horizon, 0.4)}" stop-opacity=".55"/><stop offset="1" stop-color="${col.horizon}" stop-opacity="0"/></radialGradient>`
     + `<linearGradient id="form" x1="${lv.x1}" y1="${lv.y1}" x2="${lv.x2}" y2="${lv.y2}"><stop stop-color="${white}" stop-opacity=".3"/><stop offset=".42" stop-color="${white}" stop-opacity="0"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>`
+    + `<linearGradient id="rimLight" x1="${lv.x1}" y1="${lv.y1}" x2="${lv.x2}" y2="${lv.y2}"><stop stop-color="${white}"/><stop offset=".55" stop-color="${white}" stop-opacity=".8"/><stop offset="1" stop-color="${white}" stop-opacity=".7"/></linearGradient>`
     + `<radialGradient id="vignette" cx=".5" cy=".46" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>`;
   const sky = `<rect width="400" height="300" fill="url(#sky)"/>`;
   // A redrawn subject composes itself; the automatic camera applies to the older drawings.

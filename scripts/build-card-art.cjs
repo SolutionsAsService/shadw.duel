@@ -291,7 +291,7 @@ if (fs.existsSync(subjectDir)) {
 // a few pixels wider than itself, so its silhouette separates from the sky by value,
 // not by hue. It sits inside the subject group, so it is part of the figure.
 // Large flat subjects whose 7-unit rim drops below a pixel at the 53-59px boards.
-const WIDE_RIM = { 'Mountain Behemoth': 12, Landslide: 12, 'Dark Bargain': 11, 'Flame Serpent': 11 };
+const WIDE_RIM = { 'Mountain Behemoth': 12, Landslide: 12, 'Dark Bargain': 11, 'Flame Serpent': 11, 'Battle Colossus': 10, 'Brine Witch': 10 };
 function rim(subject, base = 7) {
   // A stroked shape (a tentacle, a serpent's body) gets a rim 7 units wider than its own
   // stroke, so the rim shows outside it instead of hiding inside (run 2: Abyssal Kraken).
@@ -299,7 +299,9 @@ function rim(subject, base = 7) {
     const sw = (attrs.match(/ stroke-width="([\d.]+)"/) || [])[1];
     const width = /fill="none"/.test(attrs) && sw ? +sw + base : base;
     const bare = attrs.replace(/ (fill|stroke|stroke-width|stroke-dasharray|opacity)="[^"]*"/g, '');
-    return `<${tag}${bare} fill="none" stroke="var(--white)" stroke-width="${width}"/>`;
+    // Lit from the scene (Readability, run 2): full strength on the side facing the sun or
+    // moon, dimmer on the far side, per shape.
+    return `<${tag}${bare} fill="none" stroke="url(#rimLight)" stroke-width="${width}"/>`;
   });
   return `<g opacity=".85">${outline}</g>`;
 }
