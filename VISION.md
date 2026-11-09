@@ -49,6 +49,9 @@ the board, in the inspect panel and in the collection.
    9 Nov 2026)
 9. The richer art still passes the read-size checks (sep, twins, area, kept), and abilities fit one readable line on
    the card face. (`inferred` from pillar 3 and Must-haves 6-8)
+10. **The art is "ink and colour": woodcut + painterly.** Bold carved black linework and hatching that models form, over
+    full saturated painterly colour with directional light. Every card is a complete illustration in this one style,
+    consistent across the set. (`owner`, chose "Woodcut + painterly" after a four-style comparison, 9 Nov 2026)
 
 ## Will not do
 - Recreate a specific existing game: its card names, rules text, mana symbols, frames or art. The genre is fair game,
@@ -89,3 +92,6 @@ Must-haves 1-5 are built and checked; see S7 in `GDADA-LOG.md`. Success test not
   Turn rules stay frozen.
 - 9 Nov 2026. "Art is okay all that is a C needs work". The owner grades the run 2 art C. Next: prototype distinct art
   styles on three sample cards for the owner to choose from before any further redraw.
+- 9 Nov 2026. Shown four styles on three cards (panel/style-compare.png): today's, painterly, stained glass and woodcut.
+  The owner chose "Mix two of them" -> "Woodcut + painterly": woodcut's bold black carved linework and hatching over
+  painterly colour and lighting. This becomes the art direction for all 75 cards (Must-have 10).
