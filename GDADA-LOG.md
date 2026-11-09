@@ -331,6 +331,13 @@ No ANDON in any round. Every finding is in the tables above.
   4. The new art passes the read-size checks: 0 of 20 new cards fail sep, twin, area or kept.
   5. Nothing that worked broke: rules, art check, deterministic matches and online sync all pass.
 
+**Success tests in VISION.md:**
+- Met: tests pass, matches finish, the new art passes, every element has a relic.
+- **One is not met:** "every element has a card that touches the board". Light has none: Second Wind counts creatures
+  but does not touch them. It was found at the final check, after the round cap, and is open item 7.
+- The card-impact test is at its limit: one existing card (Worldbreaker Titan) reads 70-73% on one seed range. That is
+  open item 2.
+
 **Run status: COMPLETE**, with the open items below for the owner.
 
 ## Open items (owner decisions; not blockers)
@@ -349,6 +356,9 @@ No ANDON in any round. Every finding is in the tables above.
    - Do players notice Ward deciding Undertow's target before they cast it?
    - Do they cast Riptide before attacking without being told?
    - Does Second Wind's "otherwise 400 LP" read as a consolation or a choice?
+7. **Light has no board-touching card** (a VISION success test). Suggested: a light 2-3 cost spell that restores a
+   creature's DEF or gives your highest-DEF creature +300 DEF until your next turn. It gets new art held to the same
+   checks.
 6. **Advisories:**
    - The bot never times Turning Gale or Second Wind.
    - Screen readers do not announce "would hit".
