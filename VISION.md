@@ -59,6 +59,10 @@ the board, in the inspect panel and in the collection.
       the same deck.
     - (`owner`, "do an all new set of cards with a new art style to keep looking at options do a more magic style one
       10 new cards", 9 Nov 2026)
+    - **Direction, revised:** a newer, detailed digital painting like modern tabletop-RPG book art. That means
+      realistic anatomy and materials, painterly brush texture, many value steps, and detail you can read up close.
+      The first painted references (smooth vector gradients) read as an older style. (`owner`, "Those are okay b plus
+      but way too much in old style want a newer detailed painting style more like dnd", 9 Nov 2026)
 
 ## Will not do
 - Recreate a specific existing game: its card names, rules text, mana symbols, frames or art. The genre is fair game,
@@ -114,3 +118,7 @@ Must-haves 1-5 are built and checked; see S7 in `GDADA-LOG.md`. Success test not
   magic style one 10 new cards". Added Must-have 11. The new set is "Hollow Crown", 10 cards, painted in a classic
   fantasy-illustration style (painterly, lit, full-bleed). It is an option alongside woodcut + stained glass, not a
   replacement for it. The genre look is fair game; no game's frames, symbols, names or art are copied.
+- 9 Nov 2026. "Those are okay b plus but way too much in old style want a newer detailed painting style more like dnd".
+  The owner grades the three painted references B+ but calls the look old. Must-have 11 now asks for a newer, detailed
+  digital painting in the look of modern tabletop-RPG book art: the genre look only, no art, characters or trade dress
+  copied. The references are redrawn and shown to the owner before the other 7 cards are painted.
