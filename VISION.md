@@ -87,3 +87,5 @@ Must-haves 1-5 are built and checked; see S7 in `GDADA-LOG.md`. Success test not
   "Too simple / not detailed" and "Looks generic / samey" (not the white outline, not the card frame). Added
   Must-haves 6-9. **This lifts run 1's freeze on existing card behaviour and art**: existing creatures get abilities.
   Turn rules stay frozen.
+- 9 Nov 2026. "Art is okay all that is a C needs work". The owner grades the run 2 art C. Next: prototype distinct art
+  styles on three sample cards for the owner to choose from before any further redraw.
