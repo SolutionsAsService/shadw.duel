@@ -1,8 +1,8 @@
 # Run 3 Readability (Solarski)
 
-Verdict: OBJECT (minor). The art is a clear step up from C and works as one series. Two small fixes remain before it reads well in play.
+Verdict: OBJECT (minor). The art is a clear step up from C and works as one series.
 
-**Step up from C:** yes. In the C art, glow in one hue sat on murky ground and the silhouettes dissolved. Now dark ink leading sits against light glass with saturated element colours, so most shapes read in value alone, which is Solarski's first test.
+**Step up from C:** yes. In the C art, glow in one hue sat on murky ground and the silhouettes dissolved. Now dark ink leading sits against light glass with saturated element colours, so most shapes read in value alone.
 
 **Series:** consistent. All cards share the frame, the way the burst is built, the line weights, the silhouettes for secondary figures, and palettes that identify each element at a glance.
 
