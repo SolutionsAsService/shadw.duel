@@ -55,6 +55,36 @@ browser/CommonJS exports, XML nesting and attribute syntax, SVG path command
 arities, local gradient/accessibility references, passive resource-free content,
 distinct subject geometry, deterministic output, and the total asset-size budget.
 
+## Measuring at read size (DADA)
+
+The art is drawn at 400 × 300 but players read it in much smaller windows. `dada.card-art.json` lists those windows as
+measured in the running game: inspect 226 × 170, hand 124 × 93 (120 × 90 on phones), board 105 × 79 at 1440 px, 59 × 44
+at 390 px and 53 × 40 at 360 px. It also gives the SVG selector of each subject (`svg > g > g[stroke-linejoin]`), so
+the figure mask is exact, and each card's element for the hue check. The instrument is
+[DADA](https://github.com/PrometheusIntelligence/dada)'s `tools/card_art.py`. Run it from a dada checkout beside this
+repository:
+
+```sh
+python3 tools/card_art.py --selftest
+python3 tools/card_art.py --config ../shadw.duel/dada.card-art.json --sheet /tmp/cards.png
+```
+
+Baseline before the revamp (9 Nov 2026, exact masks, default limits):
+
+- **Silhouette separation is the main defect.** At 53 × 40, 37 of 55 cards have a median edge contrast below 1.6:1.
+  The weakest are Lord of the Void (1.30), Dark Bargain, Void Hound, Dread Reaper, Ashen Dragon and Flame Serpent. Dark
+  `url(#body)` figures sit on dark skies, and only the thin glow strokes separate them.
+- **8 twin pairs at 53 × 40:** Iron Golem ~ Stone Guardian (0.97), Ironclad Mercenary ~ Radiant Knight (0.92), Battle
+  Colossus ~ Stone Guardian (0.91), Celestial Guardian ~ Sunblade Angel (0.90), Ancient Titan ~ Stone Guardian (0.89),
+  Dawn Acolyte ~ Nightblade (0.87), Mountain Behemoth ~ Stone Guardian (0.83), Stone Guardian ~ Worldbreaker Titan
+  (0.83). Each family shares one `giant()` or `knight()` silhouette.
+- **Small subjects:** at 53 × 40, Barrier, Flame Burst, Frost Siren, Minor Restoration, Spark, Stone Skin and Void Shard
+  cover less than 12% of the window.
+- **Interior detail:** 10 cards are blobs at 53 × 40, including Deep Sea Leviathan, Nightblade, Void Hound and Wind
+  Falcon. 6 are noise, including Crystal Heart, Fireball and Healing Potion.
+- **Holding:** no figure loses pixels to `object-fit: cover` in any window, none touches the frame, and every card's
+  hue stays within 40° of its element. Only Battle Rage and Tempest Giant are clean in every window.
+
 ## Provenance
 
 The drawing paths, palettes, card-back design, and generator were authored for
