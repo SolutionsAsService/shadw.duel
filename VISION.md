@@ -53,6 +53,12 @@ the board, in the inspect panel and in the collection.
     woodcut's bold carved linework and hatching inside the panes models form; an ornamental frame worked into the
     plate. Every card is a complete illustration in this one style, consistent across the set. (`owner`: "Combine wood
     and stained no misimpit", correcting an earlier "Woodcut + painterly" pick, 9 Nov 2026)
+11. **A new 10-card set, "Hollow Crown", painted in a classic fantasy-illustration style.**
+    - Rich painted light, rendered forms, atmospheric depth, full-bleed scenes, no outlines or leading.
+    - It is an art option to compare with the 75-card woodcut + glass set. Its cards are playable, with abilities, in
+      the same deck.
+    - (`owner`, "do an all new set of cards with a new art style to keep looking at options do a more magic style one
+      10 new cards", 9 Nov 2026)
 
 ## Will not do
 - Recreate a specific existing game: its card names, rules text, mana symbols, frames or art. The genre is fair game,
@@ -104,3 +110,7 @@ Must-haves 1-5 are built and checked; see S7 in `GDADA-LOG.md`. Success test not
 - 9 Nov 2026. "I would grade this all a B plus file the lessons learned from making a card game in gdada with some
   relevant skills/runs remember dada versions need to be like managers of skills etc". The owner grades run 3 B+. The
   lessons, run-type presets, registry and ledger are filed in SolutionsAsService/gdada.
+- 9 Nov 2026. "I actually want to do an all new set of cards with a new art style to keep looking at options do a more
+  magic style one 10 new cards". Added Must-have 11. The new set is "Hollow Crown", 10 cards, painted in a classic
+  fantasy-illustration style (painterly, lit, full-bleed). It is an option alongside woodcut + stained glass, not a
+  replacement for it. The genre look is fair game; no game's frames, symbols, names or art are copied.
