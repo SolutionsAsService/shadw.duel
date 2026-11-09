@@ -1,6 +1,6 @@
 # Shadow Duel
 
-An original two-player browser card game: **55 illustrated cards**, seven elements,
+An original two-player browser card game: **75 illustrated cards**, seven elements,
 local pass-the-device play and direct WebRTC duels. No account or build step.
 
 ## Run
@@ -38,7 +38,7 @@ dependencies, tests or private files.
 ## Rules at a glance
 
 Each player has 8,000 life, five starting cards and their own shuffled copy of the
-same 55-card list (33 monsters, 19 spells, three relics). The first player draws at
+same 75-card list (40 monsters, 28 spells, seven relics: one per element). The first player draws at
 match start; later turns draw automatically. Energy starts at one for each player
 and grows on that player's own turns, up to ten. The hand limit is nine; overflow
 is discarded. Attempting to draw from an empty deck loses the duel.
@@ -55,8 +55,18 @@ persist and their bonuses affect matching creatures already on the field too.
 | Heal | Restore 300 life on summon. |
 | Burn | Deal 200 extra life damage after a direct or winning creature attack. |
 | Debuff | On summon, non-Ward enemies lose 100 ATK/DEF until their next turn. |
-| Ward | Blocks hostile creature effects such as Debuff, not combat damage. |
+| Ward | Blocks hostile creature and spell effects (Debuff, Wither, Undertow, Scorch...), not combat damage. |
 | Lifesteal | Heal the actual combat damage dealt to opposing life, before Burn. |
+
+Spells have no target picker. A spell that touches the board picks its creature by a
+fixed rule printed in its detail panel: never a Ward creature, the highest ATK (or lowest
+DEF) first, and on a tie the leftmost slot; with nothing to hit it does nothing. Scorch,
+Undertow and Landslide destroy; Wither and Riptide weaken until the creature's next turn;
+Tidewall and Rally Cry strengthen your own creatures until your next turn. Second Wind and
+Turning Gale do more for the player who is behind. Every field card shows its element as a
+shape (▲ flame, ● water, ■ earth, ≋ wind, ✦ light, ☾ shadow, ○ neutral) and G/W marks for
+Guard and Ward at every width; changed ATK/DEF are marked ▲/▼, and the last thing a card
+destroyed or changed is outlined for one turn step.
 
 Creature combat compares attack against defense: a winning attacker destroys the
 defender and excess damage reaches its controller; a tie destroys both; a losing
@@ -96,6 +106,18 @@ seed replays the same match and log hash. When `SHADW_ARTIFACT_DIR` is set, as i
 SHADW Forge run, each match is written there as `match-<seed>.json` with a
 `summary.json`. Seeds 1–20 all finish, in 19.5 turns on average.
 
+## Card balance
+
+```sh
+node scripts/card-stats.cjs --matches 2000
+```
+
+plays bot-against-bot matches and prints, for every card, how often it was played and how
+often the player who played it won. A card outside 30-70% with 30 or more plays is flagged.
+The bot is greedy, so these are questions about a card, not verdicts. The design run that
+added the 20 cards of 1.3.0 is logged in [GDADA-LOG.md](GDADA-LOG.md) against
+[VISION.md](VISION.md).
+
 ## Verification
 
 ```sh
@@ -118,6 +140,7 @@ checks. See [verification receipts](docs/VERIFICATION.md) for completed evidence
 - `game.js`: rules, validation and card/board rendering.
 - `network.js`, `lobby.js`, `server.js`: peer protocol and room lifecycle.
 - `card-art.js`, `assets/`, `scripts/build-card-art.cjs`: original vector artwork.
+- `scripts/card-stats.cjs`: per-card impact over headless matches.
 - `duel-ui.js`, `duel-ui.css`, `index.html`: collection, guide and responsive UI.
 
 [Artwork guide](docs/CARD_ART.md) · [Original roadmap, retained as historical

@@ -1,7 +1,7 @@
 # Shadow Duel card artwork
 
-The complete 55-card catalog has original, repository-native SVG illustrations:
-33 monsters, 19 spells, and 3 relics. A separate engraved eclipse-and-blades card
+The complete 75-card catalog has original, repository-native SVG illustrations:
+40 monsters, 28 spells, and 7 relics. A separate engraved eclipse-and-blades card
 back is provided for hidden or unknown cards. No raster images, emoji glyphs,
 external resources, fonts, embedded scripts, or image-generation service are used.
 
@@ -50,26 +50,26 @@ node --test tests/card-art.test.cjs
 ```
 
 `--check` compares expected output without writing files and exits unsuccessfully
-if any output is missing or stale. Tests cover all 55 cards, unknown-name fallback,
+if any output is missing or stale. Tests cover all 75 cards, unknown-name fallback,
 browser/CommonJS exports, XML nesting and attribute syntax, SVG path command
 arities, local gradient/accessibility references, passive resource-free content,
 distinct subject geometry, deterministic output, and the total asset-size budget.
 
-## Measuring at read size (DADA)
+## Measuring at read size (GDADA)
 
-The art is drawn at 400 × 300 but players read it in much smaller windows. `dada.card-art.json` lists those windows as
+The art is drawn at 400 × 300 but players read it in much smaller windows. `gdada.card-art.json` lists those windows as
 measured in the running game: inspect 226 × 170, hand 124 × 93 (120 × 90 on phones), board 105 × 79 at 1440 px, 59 × 44
 at 390 px and 53 × 40 at 360 px. It also gives the SVG selector of each subject (`svg > g > g[stroke-linejoin]`), so
 the figure mask is exact, and each card's element for the hue check. The instrument is
-[DADA](https://github.com/PrometheusIntelligence/dada)'s `tools/card_art.py`. Run it from a dada checkout beside this
-repository:
+[GDADA](https://github.com/SolutionsAsService/gdada)'s `skills/gdada/scripts/card_art.py`. Run it from a gdada
+checkout beside this repository:
 
 ```sh
-python3 tools/card_art.py --selftest
-python3 tools/card_art.py --config ../shadw.duel/dada.card-art.json --sheet /tmp/cards.png
+python3 skills/gdada/scripts/card_art.py --selftest
+python3 skills/gdada/scripts/card_art.py --config ../shadw.duel/gdada.card-art.json --sheet /tmp/cards.png
 ```
 
-Baseline before the revamp (9 Nov 2026, exact masks, default limits):
+Baseline before the revamp (9 Nov 2026, 55 cards, exact masks, default limits):
 
 - **Silhouette separation is the main defect.** At 53 × 40, 37 of 55 cards have a median edge contrast below 1.6:1.
   The weakest are Lord of the Void (1.30), Dark Bargain, Void Hound, Dread Reaper, Ashen Dragon and Flame Serpent. Dark
@@ -84,6 +84,15 @@ Baseline before the revamp (9 Nov 2026, exact masks, default limits):
   Falcon. 6 are noise, including Crystal Heart, Fireball and Healing Potion.
 - **Holding:** no figure loses pixels to `object-fit: cover` in any window, none touches the frame, and every card's
   hue stays within 40° of its element. Only Battle Rage and Tempest Giant are clean in every window.
+
+After GDADA run 1 (9 Nov 2026, 75 cards). Every subject is drawn over a pale value rim (`rim()` in the
+generator), the aura behind it is brighter, the giant, knight, angel, wizard, wolf and serpent families have
+separate base shapes, and the seven smallest subjects are enlarged:
+
+- Silhouette separation under 1.6:1 at 53 × 40: 37 of 55 → **4 of 75** (median 1.54 → 1.89).
+- Twin pairs at 53 × 40: 8 → **0**. Subjects under 12% of the window: 7 → 0.
+- All 20 new cards pass `sep`, `twin`, `area` and `kept` in every window. The remaining flags are `noise`
+  (interior edges) on small, busy subjects at the two phone board sizes, which the panel judged by eye.
 
 ## Provenance
 

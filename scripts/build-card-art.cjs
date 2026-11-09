@@ -246,6 +246,74 @@ subjects['Ember Core'] = () => circle(201, 142, 73, 'url(#flare)', 'opacity=".6"
 subjects['Crystal Heart'] = () => orbit() + p('M201 102 167 77 132 97 119 132 142 173 201 233 259 174 282 134 269 98 235 78Z', 'var(--mid)', 'stroke="var(--glow)" stroke-width="2"') + p('M201 103 201 232 259 174 282 134 232 149Z', 'var(--glow)') + p('M132 98 161 120 201 103 168 79ZM232 149 269 99 235 80 201 103Z', 'var(--white)') + line('M133 99 161 120 147 168 201 233 231 149 201 103M161 120 201 160 232 149M147 168 201 160', 2) + gem(96, 210, 13) + gem(304, 104, 10);
 subjects['Void Shard'] = () => circle(201, 145, 101, 'none', 'stroke="var(--glow)" stroke-width="1" stroke-dasharray="3 9"') + orbit() + p('M214 51 244 123 222 240 177 197 156 123Z', 'var(--mid)', 'stroke="var(--glow)" stroke-width="2"') + p('M214 51 204 138 222 240 244 123Z', 'var(--glow)') + p('M214 51 156 123 204 138Z', 'var(--white)', 'opacity=".6"') + line('M156 123 204 138 177 197M204 138 244 123', 2) + gem(127, 92, 15) + gem(281, 215, 18) + line('M204 139 180 152 211 168 194 189', 3);
 
+// ------------------------------------------------------------
+// Expansion 1 (GDADA run 1). Each subject has a base shape of its own
+// (Solarski: circle for support, square for guard, triangle for attack)
+// so it does not read as a twin of an existing card at board size.
+// ------------------------------------------------------------
+const thick = (d, width, color = 'var(--mid)') => p(d, 'none', `stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"`);
+subjects['Gloom Mite'] = () => {
+  const legs = ['M178 150 128 112 96 136', 'M176 162 116 150 84 182', 'M180 174 126 196 104 238', 'M188 182 158 226 150 262', 'M222 150 272 112 304 136', 'M224 162 284 150 316 182', 'M220 174 274 196 296 238', 'M212 182 242 226 250 262'];
+  return about(legs.map((d) => thick(d, 10, 'url(#metal)') + line(d, 3)).join('') + circle(200, 168, 50, 'url(#metal)', 'stroke="var(--white)" stroke-width="3"') + p('M168 176Q200 146 232 176', 'none', 'stroke="var(--glow)" stroke-width="5"') + circle(200, 168, 24, 'var(--glow)', 'opacity=".8"') + circle(200, 116, 24, 'url(#metal)') + p('M176 158Q200 136 224 158Q200 210 176 158Z', 'var(--mid)') + eye(190, 112, 3) + eye(210, 112, 3) + p('M193 128 189 140M207 128 211 140', 'none', 'stroke="var(--white)" stroke-width="3" stroke-linecap="round"'), 'translate(0 -8) scale(1.3)');
+};
+subjects['Lantern Bearer'] = () => line('M236 74V262', 6) + thick('M236 74Q262 70 270 92', 6, 'url(#metal)') + circle(272, 132, 44, 'url(#flare)', 'opacity=".55"') + armor('M254 100H290L296 112V156L286 168H258L248 156V112Z') + circle(272, 134, 18, 'var(--white)') + p('M150 120Q170 82 196 96Q214 106 210 136L226 258H120L150 170Z') + p('M162 118Q180 92 200 104L196 132Z', 'var(--mid)') + eye(186, 118, 2.4) + armor('M196 150 240 112 248 122 210 168Z') + line('M140 200 214 196M132 232 220 228', 2, 'opacity=".6"');
+subjects['Mossback Tortoise'] = () => p('M74 214Q86 104 200 96Q314 104 326 214Z', 'url(#metal)', 'stroke="var(--white)" stroke-width="4"') + p('M108 210 132 150 200 132 268 150 292 210Z', 'var(--mid)') + line('M132 150 160 210M200 132V210M268 150 240 210M110 182H290', 3) + armor('M96 212H136V252H96ZM264 212H304V252H264Z') + p('M318 186Q350 170 366 192Q362 214 330 212Z') + eye(350, 190, 2.5) + p('M120 108Q130 84 146 104Q156 78 172 100Q190 76 204 98', 'none', 'stroke="var(--glow)" stroke-width="5" stroke-linecap="round"');
+subjects['Brine Witch'] = () => p('M200 64 254 160 292 262H108L146 160Z') + p('M200 64 228 160 248 262H200Z', 'var(--glow)', 'opacity=".55"') + p('M108 262 120 232Q200 212 280 232L292 262Z', 'url(#metal)') + star(176, 200, 10) + star(226, 228, 8) + p('M110 106Q200 70 290 106Q200 120 110 106Z', 'url(#metal)') + p('M176 100 200 34 224 100Z', 'url(#metal)') + p('M178 118Q200 106 222 118L214 146H186Z', dark) + eye(192, 128, 2.4) + eye(208, 128, 2.4) + thick('M100 214Q72 168 108 150Q138 142 132 176Q126 196 106 186', 12) + line('M100 214Q72 168 108 150Q138 142 132 176Q126 196 106 186', 3) + thick('M300 214Q328 168 292 150Q262 142 268 176Q274 196 294 186', 12) + line('M300 214Q328 168 292 150Q262 142 268 176Q274 196 294 186', 3);
+subjects['Pyre Phoenix'] = () => p('M196 150 120 44 96 70 112 124 70 110 148 172ZM204 150 280 44 304 70 288 124 330 110 252 172Z', 'var(--glow)', 'opacity=".85"') + p('M188 154 140 74 160 132 120 120 176 174ZM212 154 260 74 240 132 280 120 224 174Z', 'var(--white)', 'opacity=".55"') + p('M182 150Q200 110 218 150L224 196 200 236 176 196Z') + p('M186 118Q200 92 214 118L206 132H194Z', 'url(#metal)') + eye(200, 116, 2.6) + p('M196 236 176 286 200 262 224 286 204 236Z', 'var(--glow)') + p('M200 240 190 276 200 266 210 276Z', 'var(--white)');
+subjects['Gale Harpy'] = () => group(p('M-30 -20 -150 -70 -110 -10 -170 10 -60 20ZM30 -20 120 -100 110 -30 170 -30 60 20Z', 'var(--mid)', 'stroke="var(--glow)" stroke-width="1.5"') + p('M-36 -24Q0 -60 36 -24L30 40 0 70 -30 40Z') + p('M-18 -40Q0 -66 18 -40L10 -26H-10Z', 'url(#metal)') + eye(-6, -40, 2.4) + eye(8, -40, 2.4) + thick('M-14 66 -30 100M14 66 30 100', 6) + p('M-38 96-30 110-22 98M22 98 30 110 38 96', 'var(--white)'), 'translate(200 150) rotate(-32)') + line('M60 236 140 214M80 262 170 236M250 80 330 56', 3, 'opacity=".55"');
+subjects['Wandering Duelist'] = () => p('M128 86Q200 62 272 86Q200 98 128 86Z', 'url(#metal)') + p('M176 84Q178 56 200 54Q222 56 224 84Z', 'url(#metal)') + p('M184 92H216L212 124H188Z', dark) + eye(194, 106, 2.2) + eye(206, 106, 2.2) + p('M182 126 218 126 270 262 196 244 116 262Z') + p('M200 126 236 262 196 244Z', 'var(--mid)') + armor('M184 136 214 136 210 196 190 196Z') + line('M214 160 330 64', 3) + p('M206 166 220 154 226 162 212 174Z', 'url(#metal)') + star(330, 64, 9);
+subjects['Scorch'] = () => p('M200 262Q128 248 132 186Q136 138 178 112Q164 152 190 160Q176 108 214 56Q214 110 246 132Q236 98 252 86Q290 150 266 214Q252 254 200 262Z', 'var(--mid)') + p('M200 250Q152 238 158 196Q162 168 186 150Q182 184 204 186Q194 146 220 112Q224 156 244 170Q256 206 234 232Q222 248 200 250Z', 'var(--glow)') + p('M200 240Q178 230 182 208Q186 192 200 184Q200 206 214 206Q224 226 200 240Z', 'var(--white)');
+subjects['Undertow'] = () => [118, 92, 66, 40].map((r, i) => `<ellipse cx="200" cy="168" rx="${r * 1.25}" ry="${r * .62}" fill="none" stroke="var(--glow)" stroke-width="${9 - i}" opacity="${.75 + i * .08}"/>`).join('') + `<ellipse cx="200" cy="168" rx="148" ry="74" fill="url(#body)" opacity=".55"/>` + p('M150 168Q160 96 200 70Q188 120 212 140Q232 112 226 82Q262 120 252 168Z', 'url(#metal)') + p('M176 168 168 132 184 150 192 116 204 152 218 124 222 168Z', 'var(--mid)') + p('M140 168Q200 196 260 168Q200 214 140 168Z', dark);
+subjects['Wither'] = () => about(thick('M204 262Q196 210 214 176Q236 140 222 110', 8, 'var(--mid)') + p('M214 200Q248 186 262 206Q236 218 214 200ZM208 226Q172 218 162 238Q190 246 208 226Z', 'var(--mid)') + group(p('M0 -46Q34 -40 40 -6Q42 30 0 42Q-42 30 -40 -6Q-34 -40 0 -46Z', 'url(#metal)') + p('M0 -30Q22 -24 24 0Q20 24 0 26Q-20 24 -24 0Q-22 -24 0 -30Z', 'var(--mid)') + p('M0 -14Q10 -10 10 2Q6 12 0 12Q-8 10 -10 2Q-10 -10 0 -14Z', dark), 'translate(206 96) rotate(28)') + p('M148 150Q132 160 140 178Q156 170 148 150ZM118 208Q102 214 108 232Q124 226 118 208ZM272 132Q290 128 294 146Q276 150 272 132Z', 'var(--glow)', 'opacity=".75"'), 'translate(-6 -6) scale(1.38)');
+subjects['Riptide'] = () => [96, 132, 168, 204].map((y, i) => thick(`M${40 + i * 6} ${y}Q120 ${y - 36} 200 ${y}T${360 - i * 6} ${y}`, 16 - i * 2, i % 2 ? 'var(--mid)' : 'url(#metal)')).join('') + p('M318 120 352 150 318 180 328 150Z', 'var(--white)') + p('M74 196 40 226 74 256 64 226Z', 'var(--white)');
+subjects['Tidewall'] = () => p('M112 262V108Q112 56 164 52Q148 84 170 96Q196 50 236 60Q218 84 238 100Q266 70 294 92V262Z', 'url(#body)', 'stroke="var(--white)" stroke-width="12"') + p('M130 262V122Q156 112 180 126Q206 110 230 126Q254 112 278 124V262Z', 'var(--mid)') + line('M130 150Q204 126 278 150M130 182Q204 158 278 182M130 214Q204 190 278 214M130 246Q204 222 278 246', 3) + armor('M84 230H124V266H84ZM284 230H324V266H284Z');
+subjects['Rally Cry'] = () => p('M96 194Q110 118 200 104Q262 98 300 64L314 90Q278 128 220 140Q156 150 140 208Z', 'url(#metal)', 'stroke="var(--mid)" stroke-width="2"') + p('M300 64 334 42 348 108 314 90Z', 'var(--mid)', 'stroke="var(--glow)" stroke-width="2"') + p('M88 186Q76 214 96 230Q124 238 140 208Z', dark) + line('M150 132 160 150M190 118 196 138M228 112 232 132M266 96 272 116', 3) + line('M358 40Q382 74 362 112M370 22Q404 74 376 132', 4) + line('M120 240 92 266M160 244 150 276', 3, 'opacity=".55"');
+subjects['Landslide'] = () => p('M40 262 300 72 360 96 360 262Z', 'url(#metal)', 'opacity=".75" stroke="var(--white)" stroke-width="3"') + armor('M96 196 132 168 172 176 186 212 156 240 110 234Z') + armor('M190 136 226 118 258 130 262 166 232 182 198 172Z') + armor('M264 84 292 70 318 82 318 112 292 122 268 110Z') + armor('M160 236 186 222 210 232 208 258 180 266 160 256Z') + p('M132 168 150 196 186 212M226 118 236 150 262 166M292 70 296 96 318 112', 'none', 'stroke="var(--glow)" stroke-width="2"') + line('M70 214 50 230M150 150 130 140M236 100 222 88', 3, 'opacity=".6"');
+subjects['Second Wind'] = () => p('M200 248Q118 220 112 140Q112 82 168 64Q236 50 270 102Q300 156 256 202Q226 230 194 214Q162 196 172 158Q182 126 214 130Q238 136 232 160', 'none', 'stroke="var(--glow)" stroke-width="14" stroke-linecap="round"') + group(p('M0 -34Q30 -20 26 10Q14 34 0 40Q-14 34 -26 10Q-30 -20 0 -34Z', 'url(#metal)') + line('M0 -30V38', 2), 'translate(220 152) rotate(40)') + star(124, 236, 11) + star(300, 74, 9);
+subjects['Turning Gale'] = () => [[200, 70, 110, 22], [196, 112, 88, 18], [204, 150, 66, 15], [196, 186, 46, 12], [202, 218, 30, 10], [198, 246, 16, 8]].map(([x, y, rx, ry], i) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${i % 2 ? 'var(--mid)' : 'url(#metal)'}" stroke="var(--glow)" stroke-width="2"/>`).join('') + p('M90 70Q200 120 310 70L196 256Z', 'url(#body)', 'opacity=".35"') + line('M300 104 334 88M318 140 352 136M64 120 96 110M80 160 112 162', 3, 'opacity=".7"') + star(312, 60, 10);
+subjects['Tidestone'] = () => p('M96 196Q100 112 200 92Q300 112 304 196Z', 'url(#metal)', 'stroke="var(--mid)" stroke-width="2"') + line('M200 96V194M150 104 172 194M250 104 228 194M114 140 146 194M286 140 254 194', 3) + p('M92 196H308Q300 250 200 256Q100 250 92 196Z', 'var(--mid)', 'stroke="var(--glow)" stroke-width="2"') + circle(200, 196, 40, 'url(#flare)') + circle(188, 184, 10, 'var(--white)', 'opacity=".8"');
+subjects['Storm Feather'] = () => group(p('M0 -120Q40 -60 30 40Q20 90 0 110Q-20 90 -30 40Q-40 -60 0 -120Z', 'url(#metal)', 'stroke="var(--glow)" stroke-width="2"') + line('M0 -110V130', 3) + bolt('M10 -70 -18 -4 6 -4 -10 56 24 -18 0 -18Z'), 'translate(204 150) rotate(30) scale(1.3 1.2)');
+subjects['Sun Sigil'] = () => line('M156 40 200 92 244 40', 3, 'opacity=".7"') + [0, 45, 90, 135, 180, 225, 270, 315].map((a) => group(p('M-12 -70 0 -104 12 -70Z', 'var(--glow)'), `translate(200 160) rotate(${a})`)).join('') + circle(200, 160, 66, 'url(#metal)', 'stroke="var(--glow)" stroke-width="3"') + circle(200, 160, 46, 'var(--mid)') + circle(200, 160, 26, 'url(#flare)') + circle(200, 160, 56, 'none', 'stroke="var(--white)" stroke-width="1.5" stroke-dasharray="3 6"');
+subjects['War Banner'] = () => line('M140 268V46', 7) + circle(140, 42, 9, 'var(--white)') + p('M144 60Q220 50 296 66L262 112 300 160Q222 146 144 156Z', 'url(#metal)', 'stroke="var(--white)" stroke-width="4"') + p('M156 74Q216 68 270 78L246 112 272 146Q214 138 156 142Z', 'var(--mid)') + p('M200 86 212 108 236 112 216 124 220 146 200 134 180 146 184 124 164 112 188 108Z', 'var(--white)') + armor('M110 254H170V272H110Z');
+
+// Family separation (GDADA run 1): members that shared one silhouette get a base
+// shape of their own, measured as twins at the 53 x 40 board window.
+const mirror = (s) => group(s, 'translate(400 0) scale(-1 1)');
+const about = (s, t) => group(s, `translate(200 160) ${t} translate(-200 -160)`);
+const towerShield = (x, y, r) => circle(x, y, r, 'url(#metal)', 'stroke="var(--mid)" stroke-width="3"') + circle(x, y, r * .62, 'var(--mid)') + gem(x, y, r * .45);
+subjects['Stone Guardian'] = () => about(giant(), 'scale(1.12 .9)') + towerShield(104, 186, 52);
+subjects['Iron Golem'] = () => about(giant('iron'), 'scale(.74 1.12)') + armor('M150 52H170V112H150ZM230 52H250V112H230Z') + p('M152 38Q160 18 172 30M232 38Q240 18 252 30', 'none', 'stroke="var(--glow)" stroke-width="4" opacity=".6"');
+subjects['Battle Colossus'] = () => about(giant('battle'), 'scale(1.18 .92)') + armor('M84 104 140 70 150 128ZM316 104 260 70 250 128Z') + group(armor('M-5 -90 5 -90 5 60 -5 60Z') + armor('M-5 -90Q-50 -96 -46 -50Q-26 -66 -5 -60Z'), 'translate(318 160) rotate(18)');
+subjects['Ancient Titan'] = () => about(giant('ancient'), 'rotate(-14) translate(14 10)') + thick('M150 70Q104 40 92 88M242 66Q300 30 314 86', 12, 'url(#metal)') + thick('M150 70Q104 40 92 88M242 66Q300 30 314 86', 2, 'var(--glow)');
+subjects['Worldbreaker Titan'] = () => about(giant('world'), 'translate(0 22) scale(.92)') + circle(200, 50, 46, 'url(#metal)', 'stroke="var(--mid)" stroke-width="3"') + line('M168 34 196 58 186 82M220 26 214 60 236 74', 3) + armor('M132 120 150 76 170 112ZM268 120 250 76 230 112Z');
+subjects['Mountain Behemoth'] = () => p('M64 262 140 92 196 170 248 60 336 262Z', 'var(--mid)', 'opacity=".7"') + about(giant('mountain'), 'translate(0 18) scale(.9)');
+subjects['Radiant Knight'] = () => knight() + towerShield(120, 176, 56) + circle(200, 84, 54, 'none', 'stroke="var(--white)" stroke-width="3" opacity=".7"');
+subjects['Ironclad Mercenary'] = () => mirror(about(knight('mercenary'), 'rotate(-12)')) + group(armor('M0 -40 46 -10 0 20Z') + armor('M-4 -60 4 -60 4 100 -4 100Z'), 'translate(318 134) rotate(-20)');
+subjects['Inferno Knight'] = () => about(knight('inferno'), 'scale(1.06)') + p('M90 262Q110 200 140 236Q150 190 176 226Q196 170 216 222Q240 182 252 232Q278 196 300 262Z', 'var(--glow)', 'opacity=".7"');
+subjects['Sunblade Angel'] = () => angel() + group(armor('M-9 -116 0 -150 9 -116 7 0 -7 0Z') + p('M0 -146 0 -6 6 -8 7 -116Z', 'var(--white)') + armor('M-26 0H26V10H-26Z'), 'translate(200 150)');
+subjects['Celestial Guardian'] = () => `<ellipse cx="200" cy="196" rx="150" ry="70" fill="url(#metal)" opacity=".55" stroke="var(--glow)" stroke-width="3"/>` + about(angel(true), 'translate(0 -10) scale(.9 .82)');
+subjects['Nightblade'] = () => about(wizard('nightblade'), 'rotate(16) translate(10 0)') + group(armor('M-6 -130 0 -150 6 -130 5 20 -5 20Z') + p('M0 -146 0 16 5 16 5 -128Z', 'var(--white)'), 'translate(124 170) rotate(-48)');
+subjects['Dawn Acolyte'] = () => circle(200, 98, 66, 'url(#flare)', 'opacity=".45"') + wizard() + circle(120, 88, 30, 'url(#flare)');
+subjects['Void Hound'] = () => mirror(wolf(true));
+subjects['Tide Serpent'] = () => mirror(serpent(true));
+
+// Value rim (GDADA run 1, Solarski): the subject is first drawn as a light outline
+// a few pixels wider than itself, so its silhouette separates from the sky by value,
+// not by hue. It sits inside the subject group, so it is part of the figure.
+function rim(subject) {
+  const outline = subject
+    .replace(/ (fill|stroke|stroke-width|stroke-dasharray|opacity)="[^"]*"/g, '')
+    .replace(/<(path|circle|rect|ellipse)/g, '<$1 fill="none" stroke="var(--white)" stroke-width="7"');
+  return `<g opacity=".85">${outline}</g>`;
+}
+// Subjects that measured under 12% of the board window, enlarged about the centre.
+const enlarge = { Barrier: 1.3, 'Flame Burst': 1.25, 'Frost Siren': 1.2, 'Minor Restoration': 1.3, Spark: 1.3, 'Stone Skin': 1.2, 'Void Shard': 1.2 };
+function subjectOf(card) {
+  const k = enlarge[card.name];
+  const s = subjects[card.name]();
+  return k ? group(s, `translate(200 160) scale(${k}) translate(-200 -160)`) : s;
+}
+
 function render(card, index = 0) {
   const palette = palettes[card.element] || palettes.neutral;
   if (!subjects[card.name]) throw new Error(`Missing illustration for ${card.name}`);
@@ -256,7 +324,7 @@ function render(card, index = 0) {
 <desc id="desc">Original Shadow Duel illustration of ${title}, in a ${card.element} fantasy landscape.</desc>
 <defs>
 <linearGradient id="sky" x2=".8" y2="1"><stop stop-color="${bg}"/><stop offset=".6" stop-color="${mid}"/><stop offset="1" stop-color="${bg}"/></linearGradient>
-<radialGradient id="aura"><stop stop-color="${glow}" stop-opacity=".24"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient>
+<radialGradient id="aura"><stop stop-color="${glow}" stop-opacity=".6"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient>
 <linearGradient id="body" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="${mid}"/><stop offset=".45" stop-color="${bg}"/><stop offset="1" stop-color="#080c16"/></linearGradient>
 <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${glow}"/><stop offset=".27" stop-color="${mid}"/><stop offset=".7" stop-color="${bg}"/><stop offset="1" stop-color="${mid}"/></linearGradient>
 <radialGradient id="flare"><stop stop-color="${white}"/><stop offset=".35" stop-color="${glow}"/><stop offset="1" stop-color="${mid}"/></radialGradient>
@@ -264,7 +332,7 @@ function render(card, index = 0) {
 </defs>
 <g style="--mid:${mid};--glow:${glow};--white:${white}">
 ${environment(card, index)}
-<g stroke-linejoin="round">${subjects[card.name]()}</g>
+<g stroke-linejoin="round">${rim(subjectOf(card))}${subjectOf(card)}</g>
 <rect width="400" height="300" fill="url(#shade)"/>
 <path d="M14 52V14H52M348 14H386V52M14 248V286H52M348 286H386V248" fill="none" stroke="${glow}" opacity=".34"/>
 <path d="M22 30V22H30M370 22H378V30M22 270V278H30M370 278H378V270" fill="none" stroke="${white}" opacity=".5"/>

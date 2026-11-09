@@ -160,4 +160,28 @@ body:has(#lobby-overlay:not(.hidden)), body:has(#game-over-overlay:not(.hidden))
   .rules-steps h3 { margin: 8px 0; }
   .rules-keywords p { grid-template-columns: 65px 1fr; gap: 8px; }
 }
+
+/* GDADA run 1: element shape, Guard/Ward marks, changed stats and impact (visible at every width). */
+.card .card-marks { position: absolute; top: 20px; right: 6px; z-index: 2; display: flex; gap: 2px; pointer-events: none; }
+.card-marks span { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 2px; border-radius: 4px; background: #0d1020e6; border: 1px solid #c9bdf266; color: #f3ead6; font: 700 11px/1 system-ui, sans-serif; }
+.card-marks .mark-keyword { border-color: #f0d79a99; color: #ffe9b0; }
+.card-stats .stat-up { color: #8ff0a8; font-weight: 700; }
+.card-stats .stat-down { color: #ff9b8f; font-weight: 700; }
+.card-stats .stat-up::after { content: " ▲"; font-size: .8em; }
+.card-stats .stat-down::after { content: " ▼"; font-size: .8em; }
+.card.impact { outline: 3px solid #ffd27a; outline-offset: 1px; }
+.card.impact-weakened { outline-color: #ff9b8f; }
+.card.impact-boosted { outline-color: #8ff0a8; }
+.zone.impact-destroyed { outline: 3px dashed #ff9b8f; outline-offset: -3px; color: #ffd0c8; font-weight: 700; }
+.card.impact, .zone.impact-destroyed { animation: impact-pulse .6s ease-out 1; }
+@keyframes impact-pulse { from { box-shadow: 0 0 0 6px #ffd27a88; } to { box-shadow: 0 0 0 0 #ffd27a00; } }
+.card-detail-panel .card-rule { padding: 8px 10px; border-left: 3px solid #ffd27a; background: #ffffff0d; }
+@media (max-width: 760px) {
+  .field .card .card-marks { top: 3px; right: 3px; flex-direction: column; }
+  .field .card-marks span { min-width: 13px; height: 13px; font-size: 10px; }
+  .field .card .card-name { font-size: 10px; }
+  .field .card .card-stats { font-size: 10px; }
+  /* A slim pill on the bottom edge of the art, so the 10px label does not cover the subject. */
+  .field .card-state { font-size: 10px; line-height: 12px; top: 40px; padding: 0 2px; background: #151222cc; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

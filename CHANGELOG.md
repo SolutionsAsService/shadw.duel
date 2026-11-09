@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.0 — 2026-11-09
+
+- **20 new cards** (75 in all), from the GDADA run in `GDADA-LOG.md`: the first spells that
+  touch the board (Scorch, Undertow, Landslide destroy; Wither and Riptide weaken; Tidewall
+  and Rally Cry strengthen), catch-up spells (Second Wind, Turning Gale), a relic for every
+  element (Tidestone, Storm Feather, Sun Sigil, War Banner), and creatures for the empty
+  cost slots and the under-used Lifesteal and Debuff keywords.
+- Ward now also blocks hostile spell effects. Board spells pick their creature by a fixed,
+  printed rule (no Ward, best value, leftmost on a tie) and log what they hit.
+- Field cards show element shapes and Guard/Ward marks at every width, mark changed ATK/DEF,
+  and outline the creature a card just destroyed or changed. Phone board text is 10px.
+- Card art: a pale value rim behind every subject, a brighter aura, distinct silhouettes for
+  look-alike families, and larger small subjects. Twin pairs at the 53 × 40 board: 8 → 0.
+- The bot holds board spells with nothing to hit and casts pre-combat spells before attacking.
+- `scripts/card-stats.cjs`: per-card impact over headless bot matches.
+
 ## 1.2.0 — 2026-10-30
 
 - **Vs Computer:** a seeded, greedy Shadow Bot (`bot.js`) that picks only from the

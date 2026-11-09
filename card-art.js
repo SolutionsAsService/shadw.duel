@@ -35,6 +35,13 @@
   "Arcane Automaton": "assets/cards/arcane-automaton.svg",
   "Battle Colossus": "assets/cards/battle-colossus.svg",
   "Ancient Titan": "assets/cards/ancient-titan.svg",
+  "Gloom Mite": "assets/cards/gloom-mite.svg",
+  "Lantern Bearer": "assets/cards/lantern-bearer.svg",
+  "Mossback Tortoise": "assets/cards/mossback-tortoise.svg",
+  "Brine Witch": "assets/cards/brine-witch.svg",
+  "Pyre Phoenix": "assets/cards/pyre-phoenix.svg",
+  "Gale Harpy": "assets/cards/gale-harpy.svg",
+  "Wandering Duelist": "assets/cards/wandering-duelist.svg",
   "Healing Potion": "assets/cards/healing-potion.svg",
   "Minor Restoration": "assets/cards/minor-restoration.svg",
   "Fireball": "assets/cards/fireball.svg",
@@ -54,9 +61,22 @@
   "Meteor": "assets/cards/meteor.svg",
   "Void Collapse": "assets/cards/void-collapse.svg",
   "Divine Renewal": "assets/cards/divine-renewal.svg",
+  "Scorch": "assets/cards/scorch.svg",
+  "Undertow": "assets/cards/undertow.svg",
+  "Wither": "assets/cards/wither.svg",
+  "Riptide": "assets/cards/riptide.svg",
+  "Tidewall": "assets/cards/tidewall.svg",
+  "Rally Cry": "assets/cards/rally-cry.svg",
+  "Landslide": "assets/cards/landslide.svg",
+  "Second Wind": "assets/cards/second-wind.svg",
+  "Turning Gale": "assets/cards/turning-gale.svg",
   "Ember Core": "assets/cards/ember-core.svg",
   "Crystal Heart": "assets/cards/crystal-heart.svg",
-  "Void Shard": "assets/cards/void-shard.svg"
+  "Void Shard": "assets/cards/void-shard.svg",
+  "Tidestone": "assets/cards/tidestone.svg",
+  "Storm Feather": "assets/cards/storm-feather.svg",
+  "Sun Sigil": "assets/cards/sun-sigil.svg",
+  "War Banner": "assets/cards/war-banner.svg"
 });
   const fallback = 'assets/card-back.svg';
   function src(card) {

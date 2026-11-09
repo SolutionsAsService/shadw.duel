@@ -55,18 +55,31 @@ const spellExpectations = {
   Meteor: { damage: 1400 },
   'Void Collapse': { damage: 1800 },
   'Divine Renewal': { heal: 1800 },
+  // Expansion 1. In this harness the caster controls one Iron Golem and the
+  // opponent controls nothing, so enemy board spells find no target.
+  Scorch: {},
+  Undertow: {},
+  Wither: {},
+  Riptide: {},
+  Tidewall: { own: ['tempDef', 400] },
+  'Rally Cry': { own: ['tempAtk', 200] },
+  Landslide: {},
+  'Second Wind': { draw: 1 },
+  'Turning Gale': { damage: 400 },
 };
+const TOTAL = cards.MONSTER_TEMPLATES.length + cards.SPELL_TEMPLATES.length + cards.RELIC_TEMPLATES.length;
 
-test('55 unique templates are all reachable; seeded decks and seat IDs are stable', () => {
+test('75 unique templates are all reachable; seeded decks and seat IDs are stable', () => {
   const all = cards.getAllCards();
-  assert.equal(all.length, 55);
-  assert.equal(new Set(all.map((entry) => entry.name)).size, 55);
+  assert.equal(TOTAL, 75);
+  assert.equal(all.length, TOTAL);
+  assert.equal(new Set(all.map((entry) => entry.name)).size, TOTAL);
   const first = cards.buildSeededDeck(123, 0);
   cards.getAllCards();
   assert.deepEqual(cards.buildSeededDeck(123, 0), first);
-  assert.equal(first.length, 55);
+  assert.equal(first.length, TOTAL);
   assert.deepEqual(new Set(first.map((entry) => entry.name)), new Set(all.map((entry) => entry.name)));
-  assert.equal(new Set([...first, ...cards.buildSeededDeck(123, 1)].map((entry) => entry.id)).size, 110);
+  assert.equal(new Set([...first, ...cards.buildSeededDeck(123, 1)].map((entry) => entry.id)).size, 2 * TOTAL);
 });
 
 for (const [name, expected] of Object.entries(spellExpectations)) {
@@ -85,6 +98,7 @@ for (const [name, expected] of Object.entries(spellExpectations)) {
     assert.equal(player.shield, expected.shield || 0);
     assert.equal(player.cardsPlayed, 1);
     if (expected.bonus) assert.equal(player[expected.bonus[0]], expected.bonus[1]);
+    if (expected.own) assert.equal(sleeping.card[expected.own[0]], expected.own[1]);
     if (expected.swift) {
       assert.equal(player.swiftBonus, true);
       assert.equal(sleeping.summonSickness, false);
@@ -92,7 +106,7 @@ for (const [name, expected] of Object.entries(spellExpectations)) {
   });
 }
 
-test('all nineteen spells have a specific effect test', () => {
+test('every spell has a specific effect test', () => {
   assert.deepEqual(new Set(Object.keys(spellExpectations)), new Set(cards.SPELL_TEMPLATES.map((entry) => entry.name)));
 });
 
@@ -290,7 +304,7 @@ test('lethal damage, losing LP to Dark Bargain, surrender, and clean restart', (
   assert.equal(api.state().gameOver, false);
   assert.equal(api.state().players[0].lp, 8000);
   assert.equal(api.state().players[0].hand.length, 6);
-  assert.equal(api.state().players[0].deck.length, 49);
+  assert.equal(api.state().players[0].deck.length, TOTAL - 6);
   api.state().players[0].lp = 200;
   api.state().players[0].shield = 1000;
   play(api, 'Dark Bargain');

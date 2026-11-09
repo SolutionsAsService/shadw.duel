@@ -468,12 +468,57 @@ const MONSTER_TEMPLATES = [
     text: "A legendary being from before recorded history.",
   },
 
+
+  // ----------------------------------------------------------
+  // EXPANSION 1 (GDADA run 1): fills the cost curve and the
+  // under-used keywords (lifesteal, debuff) with existing rules.
+  // ----------------------------------------------------------
+
+  { name: "Gloom Mite", icon: "🕷️", element: "shadow", rarity: "common", cost: 1, atk: 300, def: 250,
+    keywords: ["lifesteal"], text: "A tick of living dusk that feeds on every blow." },
+  { name: "Lantern Bearer", icon: "🏮", element: "light", rarity: "common", cost: 2, atk: 400, def: 450,
+    keywords: ["heal"], text: "Carries the dawn into the longest night." },
+  { name: "Mossback Tortoise", icon: "🐢", element: "earth", rarity: "common", cost: 1, atk: 200, def: 450,
+    keywords: ["guard"], text: "A boulder that decided to walk." },
+  { name: "Brine Witch", icon: "🧙", element: "water", rarity: "uncommon", cost: 4, atk: 700, def: 650,
+    keywords: ["debuff", "lifesteal"], text: "Her tide pulls strength out of everything it touches." },
+  { name: "Pyre Phoenix", icon: "🐦‍🔥", element: "flame", rarity: "rare", cost: 5, atk: 950, def: 600,
+    keywords: ["burn", "lifesteal"], text: "It burns its enemies and drinks the heat back." },
+  { name: "Gale Harpy", icon: "🪶", element: "wind", rarity: "uncommon", cost: 4, atk: 750, def: 450,
+    keywords: ["swift", "debuff"], text: "Shrieks down out of the storm before anyone can brace." },
+  { name: "Wandering Duelist", icon: "🤺", element: "neutral", rarity: "uncommon", cost: 4, atk: 800, def: 700,
+    keywords: [], text: "No banner, no master, no wasted motion." },
 ];
 
 
 // ============================================================
 // SPELL TEMPLATES
 // ============================================================
+
+// ----------------------------------------------------------
+// BOARD SPELL HELPERS
+// ----------------------------------------------------------
+//
+// Spells have no target picker, so a spell that touches a creature picks it
+// by a fixed rule both browsers compute the same way: never a Ward creature,
+// best value first, and on a tie the leftmost slot.
+function pickCreature(game, seat, by, limit = Infinity) {
+  let best = -1, bestValue = null;
+  game.players[seat].field.forEach((slot, index) => {
+    if (!slot || game.hasKeyword(slot.card, "ward")) return;
+    const value = by === "lowest-def" ? game.getMonsterDefense(slot.card, seat) : game.getMonsterAttack(slot.card, seat);
+    if (value > limit) return;
+    const better = bestValue === null || (by === "lowest-def" ? value < bestValue : value > bestValue);
+    if (better) { best = index; bestValue = value; }
+  });
+  return best;
+}
+function enemiesWithoutWard(game, seat) {
+  return game.players[seat].field.filter((slot) => slot && !game.hasKeyword(slot.card, "ward"));
+}
+function noTarget(game, name) {
+  game.addLog(`${name}: no enemy creature qualifies; no effect.`);
+}
 
 const SPELL_TEMPLATES = [
 
@@ -787,6 +832,131 @@ const SPELL_TEMPLATES = [
     },
   },
 
+  // ----------------------------------------------------------
+  // EXPANSION 1: BOARD SPELLS AND CATCH-UP (GDADA run 1)
+  // ----------------------------------------------------------
+  {
+    name: "Scorch", icon: "🔥", element: "flame", rarity: "common", cost: 2, type: "spell",
+    text: "Destroy the weakest-DEF enemy creature with 400 DEF or less.",
+    rule: "Picks the enemy creature without Ward that has the lowest DEF, if that DEF is 400 or less. On a tie, the leftmost. If none qualifies, nothing happens.",
+    wants: "enemy",
+    canHit: (game, seat) => pickCreature(game, 1 - seat, "lowest-def", 400) !== -1,
+    effect: (game, playerIndex) => {
+      const foe = 1 - playerIndex, slot = pickCreature(game, foe, "lowest-def", 400);
+      if (slot === -1) return noTarget(game, "Scorch");
+      game.addLog(`Scorch hits ${game.players[foe].field[slot].card.name}.`);
+      game.destroyMonster(foe, slot);
+    },
+  },
+  {
+    name: "Undertow", icon: "🌊", element: "water", rarity: "rare", cost: 4, type: "spell",
+    text: "Destroy the strongest enemy creature without Ward.",
+    rule: "Picks the enemy creature without Ward that has the highest ATK. On a tie, the leftmost. If none qualifies, nothing happens.",
+    wants: "enemy",
+    canHit: (game, seat) => pickCreature(game, 1 - seat, "highest-atk") !== -1,
+    effect: (game, playerIndex) => {
+      const foe = 1 - playerIndex, slot = pickCreature(game, foe, "highest-atk");
+      if (slot === -1) return noTarget(game, "Undertow");
+      game.addLog(`Undertow drags down ${game.players[foe].field[slot].card.name}.`);
+      game.destroyMonster(foe, slot);
+    },
+  },
+  {
+    name: "Wither", icon: "🥀", element: "shadow", rarity: "uncommon", cost: 3, type: "spell",
+    text: "The strongest enemy creature loses 500 ATK and DEF until its next turn.",
+    rule: "Picks the enemy creature without Ward that has the highest ATK. On a tie, the leftmost. It loses 500 ATK and 500 DEF until the start of its controller's next turn. If none qualifies, nothing happens.",
+    wants: "enemy", timing: "before-attacks",
+    canHit: (game, seat) => pickCreature(game, 1 - seat, "highest-atk") !== -1,
+    effect: (game, playerIndex) => {
+      const foe = 1 - playerIndex, slot = pickCreature(game, foe, "highest-atk");
+      if (slot === -1) return noTarget(game, "Wither");
+      const card = game.players[foe].field[slot].card;
+      card.tempAtk = (card.tempAtk || 0) - 500;
+      card.tempDef = (card.tempDef || 0) - 500;
+      game.markImpact(foe, slot, "weakened", card.name);
+      game.addLog(`Wither: ${card.name} loses 500 ATK / DEF until its next turn.`);
+    },
+  },
+  {
+    name: "Riptide", icon: "🌀", element: "wind", rarity: "common", cost: 2, type: "spell",
+    text: "Enemy creatures without Ward lose 300 DEF until their next turn.",
+    rule: "Every enemy creature without Ward loses 300 DEF until the start of its controller's next turn. Cast it before you attack.",
+    wants: "enemy", timing: "before-attacks",
+    canHit: (game, seat) => enemiesWithoutWard(game, 1 - seat).length > 0,
+    effect: (game, playerIndex) => {
+      const foe = 1 - playerIndex, hit = enemiesWithoutWard(game, foe);
+      hit.forEach((slot) => {
+        slot.card.tempDef = (slot.card.tempDef || 0) - 300;
+        game.markImpact(foe, game.players[foe].field.indexOf(slot), "weakened", slot.card.name);
+      });
+      game.addLog(`Riptide: ${hit.length} enemy creature${hit.length === 1 ? "" : "s"} lose 300 DEF.`);
+    },
+  },
+  {
+    name: "Tidewall", icon: "🧱", element: "water", rarity: "common", cost: 2, type: "spell",
+    text: "Your creatures gain +400 DEF until your next turn.",
+    rule: "Every creature you control gains 400 DEF until the start of your next turn, so it holds through your opponent's attacks.",
+    wants: "own",
+    canHit: (game, seat) => game.players[seat].field.some(Boolean),
+    effect: (game, playerIndex) => {
+      const mine = game.players[playerIndex].field.filter(Boolean);
+      mine.forEach((slot) => {
+        slot.card.tempDef = (slot.card.tempDef || 0) + 400;
+        game.markImpact(playerIndex, game.players[playerIndex].field.indexOf(slot), "boosted", slot.card.name);
+      });
+      game.addLog(`Tidewall: ${mine.length} creature${mine.length === 1 ? "" : "s"} gain +400 DEF.`);
+    },
+  },
+  {
+    name: "Rally Cry", icon: "📯", element: "neutral", rarity: "common", cost: 2, type: "spell",
+    text: "Your creatures gain +200 ATK until your next turn.",
+    rule: "Every creature you control gains 200 ATK until the start of your next turn. Cast it before you attack.",
+    wants: "own", timing: "before-attacks",
+    canHit: (game, seat) => game.players[seat].field.some(Boolean),
+    effect: (game, playerIndex) => {
+      const mine = game.players[playerIndex].field.filter(Boolean);
+      mine.forEach((slot) => {
+        slot.card.tempAtk = (slot.card.tempAtk || 0) + 200;
+        game.markImpact(playerIndex, game.players[playerIndex].field.indexOf(slot), "boosted", slot.card.name);
+      });
+      game.addLog(`Rally Cry: ${mine.length} creature${mine.length === 1 ? "" : "s"} gain +200 ATK.`);
+    },
+  },
+  {
+    name: "Landslide", icon: "⛰️", element: "earth", rarity: "epic", cost: 5, type: "spell",
+    text: "Destroy every enemy creature with 500 DEF or less.",
+    rule: "Destroys every enemy creature without Ward whose DEF is 500 or less. If none qualifies, nothing happens.",
+    wants: "enemy",
+    canHit: (game, seat) => pickCreature(game, 1 - seat, "lowest-def", 500) !== -1,
+    effect: (game, playerIndex) => {
+      const foe = 1 - playerIndex, field = game.players[foe].field;
+      const doomed = field.map((slot, i) => (slot && !game.hasKeyword(slot.card, "ward") && game.getMonsterDefense(slot.card, foe) <= 500 ? i : -1)).filter((i) => i >= 0);
+      if (!doomed.length) return noTarget(game, "Landslide");
+      game.addLog(`Landslide buries ${doomed.length} creature${doomed.length === 1 ? "" : "s"}.`);
+      doomed.forEach((i) => game.destroyMonster(foe, i));
+    },
+  },
+  {
+    name: "Second Wind", icon: "🍃", element: "light", rarity: "common", cost: 2, type: "spell",
+    text: "Draw 1 card, or 2 if your opponent has more creatures than you.",
+    rule: "Counts creatures on both sides when it resolves. If your opponent controls more, draw 2; otherwise draw 1.",
+    effect: (game, playerIndex) => {
+      const count = (seat) => game.players[seat].field.filter(Boolean).length;
+      const n = count(1 - playerIndex) > count(playerIndex) ? 2 : 1;
+      game.addLog(`Second Wind draws ${n}.`);
+      game.drawCards(playerIndex, n);
+    },
+  },
+  {
+    name: "Turning Gale", icon: "🌪️", element: "wind", rarity: "uncommon", cost: 3, type: "spell",
+    text: "Deal 400 damage, or 800 if you have less life than your opponent.",
+    rule: "Compares life totals when it resolves. If yours is lower, deal 800 damage to your opponent; otherwise deal 400.",
+    effect: (game, playerIndex) => {
+      const behind = game.players[playerIndex].lp < game.players[1 - playerIndex].lp;
+      game.dealDamage(1 - playerIndex, behind ? 800 : 400, "spell");
+    },
+  },
+
 ];
 
 
@@ -848,6 +1018,28 @@ const RELIC_TEMPLATES = [
     },
   },
 
+  // EXPANSION 1: one relic for every element (GDADA run 1).
+  {
+    name: "Tidestone", icon: "🔵", element: "water", rarity: "rare", cost: 3, type: "relic",
+    text: "Your water creatures gain +100 DEF.",
+    effect: (game, playerIndex) => { const p = game.players[playerIndex]; p.relicDef.water = (p.relicDef.water || 0) + 100; },
+  },
+  {
+    name: "Storm Feather", icon: "🪶", element: "wind", rarity: "rare", cost: 3, type: "relic",
+    text: "Your wind creatures gain +100 ATK.",
+    effect: (game, playerIndex) => { const p = game.players[playerIndex]; p.relicAtk.wind = (p.relicAtk.wind || 0) + 100; },
+  },
+  {
+    name: "Sun Sigil", icon: "🟡", element: "light", rarity: "rare", cost: 3, type: "relic",
+    text: "Your light creatures gain +100 ATK and +100 DEF.",
+    effect: (game, playerIndex) => { const p = game.players[playerIndex]; p.relicAtk.light = (p.relicAtk.light || 0) + 100; p.relicDef.light = (p.relicDef.light || 0) + 100; },
+  },
+  {
+    name: "War Banner", icon: "🚩", element: "neutral", rarity: "epic", cost: 4, type: "relic",
+    text: "All your creatures gain +50 ATK and +50 DEF.",
+    effect: (game, playerIndex) => { const p = game.players[playerIndex]; p.relicAtk.all = (p.relicAtk.all || 0) + 50; p.relicDef.all = (p.relicDef.all || 0) + 50; },
+  },
+
 ];
 
 
@@ -886,6 +1078,13 @@ function createCard(template) {
 
     text: template.text || "",
 
+    // Board spells: the full target rule (shown in the detail panel), what
+    // the spell touches, when it is worth casting, and whether it can hit now.
+    rule: template.rule || "",
+    wants: template.wants || null,
+    timing: template.timing || null,
+    canHit: template.canHit || null,
+
     effect: template.effect || null,
   };
 }
@@ -895,7 +1094,7 @@ function createCard(template) {
 // BUILD ONE FULL DECK
 // ============================================================
 //
-// Each duel uses one copy of every card in the 55-card collection.
+// Each duel uses one copy of every card in the collection.
 // This makes every creature, spell and persistent relic available.
 
 function buildDeckCards() {

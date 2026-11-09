@@ -88,8 +88,8 @@ function validatePath(data, name) {
   }
 }
 
-test('all 55 catalog cards resolve to unique, checked-in artwork', () => {
-  assert.equal(cards.length, 55);
+test('all 75 catalog cards resolve to unique, checked-in artwork', () => {
+  assert.equal(cards.length, 75);
   assert.equal(Object.keys(art.manifest).length, cards.length);
   assert.equal(new Set(Object.values(art.manifest)).size, cards.length);
   for (const card of cards) {
@@ -133,7 +133,7 @@ test('generated files are deterministic and checked-in output is current', () =>
   assert.deepEqual(build(), generated);
   for (const [name, content] of generated) assert.equal(fs.readFileSync(path.join(root, name), 'utf8'), content, name);
   const output = execFileSync(process.execPath, ['scripts/build-card-art.cjs', '--check'], { cwd: root, encoding: 'utf8' });
-  assert.match(output, /Verified 55 card illustrations/);
+  assert.match(output, /Verified 75 card illustrations/);
 });
 
 test('complete original vector set stays below a 900 KB asset budget', () => {

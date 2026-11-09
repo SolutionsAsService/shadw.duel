@@ -137,6 +137,11 @@ function createPlayer() {
 
     swiftBonus: false,
 
+    // Relic bonuses by element ("all" applies to every creature).
+    relicAtk: {},
+
+    relicDef: {},
+
 
     // -------------------------
     // Statistics
@@ -190,6 +195,14 @@ const game = {
 game.drawCards = drawCards;
 game.healPlayer = healPlayer;
 game.dealDamage = dealDamage;
+// Board helpers for card effects. Spells have no target picker, so a board
+// effect picks its creature deterministically (see pickCreature in cards.js).
+game.destroyMonster = destroyMonster;
+game.getMonsterAttack = getMonsterAttack;
+game.getMonsterDefense = getMonsterDefense;
+game.hasKeyword = hasKeyword;
+game.addLog = addLog;
+game.markImpact = markImpact;
 
 // ============================================================
 // MATCH SESSION
@@ -349,6 +362,7 @@ function validateAction(action, actor) {
 }
 
 function executeAction(action, actor) {
+  game.impacts = [];
   if (action.type === "play") playCardById(action.cardId);
   else if (action.type === "attack") performAttack(action.attacker, action.target);
   else if (action.type === "end") advanceTurn();
@@ -695,6 +709,7 @@ function getMonsterAttack(card, playerIndex = null) {
   let value = (card.atk || 0) + (card.bonusAtk || 0) + (card.tempAtk || 0);
   if (player && card.element === "flame") value += player.flameBonus || 0;
   if (player && card.element === "shadow") value += player.shadowBonus || 0;
+  if (player && player.relicAtk) value += (player.relicAtk[card.element] || 0) + (player.relicAtk.all || 0);
   return Math.max(0, value);
 }
 
@@ -706,7 +721,9 @@ function getMonsterAttack(card, playerIndex = null) {
 function getMonsterDefense(card, playerIndex = null) {
   if (!card) return 0;
   let value = (card.def || 0) + (card.bonusDef || 0) + (card.tempDef || 0);
-  if (playerIndex !== null && card.element === "earth") value += game.players[playerIndex].earthDefenseBonus || 0;
+  const owner = playerIndex === null ? null : game.players[playerIndex];
+  if (owner && card.element === "earth") value += owner.earthDefenseBonus || 0;
+  if (owner && owner.relicDef) value += (owner.relicDef[card.element] || 0) + (owner.relicDef.all || 0);
   return Math.max(0, value);
 }
 
@@ -871,10 +888,11 @@ function playMonster(cardId) {
 
   if (hasKeyword(card, "heal")) healPlayer(playerIndex, 300);
   if (hasKeyword(card, "debuff")) {
-    game.players[1 - playerIndex].field.forEach((slot) => {
+    game.players[1 - playerIndex].field.forEach((slot, index) => {
       if (slot && !hasKeyword(slot.card, "ward")) {
         slot.card.tempAtk = (slot.card.tempAtk || 0) - 100;
         slot.card.tempDef = (slot.card.tempDef || 0) - 100;
+        markImpact(1 - playerIndex, index, "weakened", slot.card.name);
       }
     });
     addLog(`${card.name} weakens enemies without Ward by 100 ATK / DEF until their next turn.`);
@@ -1338,6 +1356,7 @@ function destroyMonster(playerIndex, slotIndex) {
     `${slot.card.name} was destroyed.`
   );
 
+  markImpact(playerIndex, slotIndex, "destroyed", slot.card.name);
 
   player.field[slotIndex] = null;
 
@@ -1350,6 +1369,17 @@ function destroyMonster(playerIndex, slotIndex) {
 
 }
 
+
+// The last board change a card caused, shown for one render so the player
+// sees what a spell or attack hit. Cleared by the next action.
+function markImpact(playerIndex, slotIndex, kind, name) {
+  game.impacts = game.impacts || [];
+  game.impacts.push({ seat: playerIndex, slot: slotIndex, kind, name });
+}
+
+function impactAt(seat, slot) {
+  return (game.impacts || []).filter((i) => i.seat === seat && i.slot === slot).pop() || null;
+}
 
 // ============================================================
 // APPLY BURN
@@ -1994,6 +2024,13 @@ function startGame() {
 // CARD DISPLAY
 // ============================================================
 
+// Shape glyphs so an element never depends on colour alone (Game Accessibility Guidelines).
+const ELEMENT_GLYPHS = { flame: "▲", water: "●", earth: "■", wind: "≋", light: "✦", shadow: "☾", neutral: "○" };
+
+function statClass(value, base) {
+  return value > base ? " stat-up" : value < base ? " stat-down" : "";
+}
+
 function cardEl(card, extraClass, playerIndex = null) {
   const div = document.createElement("div");
   const type = card.type || "monster";
@@ -2004,7 +2041,9 @@ function cardEl(card, extraClass, playerIndex = null) {
   div.dataset.element = card.element || "neutral";
   div.setAttribute("role", "button");
   div.tabIndex = 0;
-  div.setAttribute("aria-label", `${card.name}, ${type}, ${getCardCost(card)} energy. Press I for details.`);
+  const marks = [card.element || "neutral", ...["guard", "ward"].filter((k) => hasKeyword(card, k))].join(", ");
+  const stats = type === "monster" ? `, ${getMonsterAttack(card, playerIndex)} ATK, ${getMonsterDefense(card, playerIndex)} DEF` : "";
+  div.setAttribute("aria-label", `${card.name}, ${type}, ${marks}, ${getCardCost(card)} energy${stats}. Press I for details.`);
   const src = window.ShadowCardArt && window.ShadowCardArt.src(card);
   const art = src
     ? `<div class="card-icon"><img class="card-art" src="${escapeHTML(src)}" alt="${escapeHTML(card.name)} artwork" loading="lazy" draggable="false"></div>`
@@ -2012,12 +2051,13 @@ function cardEl(card, extraClass, playerIndex = null) {
   div.innerHTML = `
     <div class="card-cost" title="Energy cost">${getCardCost(card)}</div>
     <div class="card-element">${escapeHTML(card.element || "neutral")}</div>
+    <div class="card-marks" aria-hidden="true"><span class="mark-element" title="${escapeHTML(card.element || "neutral")}">${ELEMENT_GLYPHS[card.element] || ELEMENT_GLYPHS.neutral}</span>${hasKeyword(card, "guard") ? '<span class="mark-keyword" title="Guard">G</span>' : ""}${hasKeyword(card, "ward") ? '<span class="mark-keyword" title="Ward">W</span>' : ""}</div>
     ${art}
     <div class="card-name">${escapeHTML(card.name)}</div>
     <div class="card-rarity">${escapeHTML(card.rarity || "common")}</div>
     <div class="card-text">${escapeHTML(card.text || "")}</div>
     <div class="card-keywords">${escapeHTML((card.keywords || []).join(" • "))}</div>
-    ${type === "monster" ? `<div class="card-stats"><span title="Attack">${getMonsterAttack(card, playerIndex)} ATK</span> / <span title="Defense">${getMonsterDefense(card, playerIndex)} DEF</span></div>` : ""}
+    ${type === "monster" ? `<div class="card-stats"><span class="stat-atk${statClass(getMonsterAttack(card, playerIndex), card.atk || 0)}" title="Attack">${getMonsterAttack(card, playerIndex)} ATK</span> / <span class="stat-def${statClass(getMonsterDefense(card, playerIndex), card.def || 0)}" title="Defense">${getMonsterDefense(card, playerIndex)} DEF</span></div>` : ""}
   `;
   const info = document.createElement("button");
   info.type = "button";
@@ -2047,7 +2087,7 @@ const KEYWORD_RULES = {
   heal: "Heal: restore 300 Life Points when summoned.",
   burn: "Burn: deal 200 additional Life Point damage after a direct attack or a winning creature attack.",
   debuff: "Debuff: when summoned, enemy creatures without Ward lose 100 ATK and DEF until their controller's next turn.",
-  ward: "Ward: immune to hostile creature effects such as Debuff; does not prevent combat damage.",
+  ward: "Ward: immune to hostile creature and spell effects such as Debuff, Wither and Undertow; does not prevent combat damage.",
   lifesteal: "Lifesteal: restore Life Points equal to the combat damage actually dealt to the opponent's Life Points (before Burn).",
 };
 
@@ -2066,6 +2106,12 @@ function showCardDetails(card) {
   const info = display.querySelector(".card-info-button");
   if (info) info.remove();
   content.appendChild(display);
+  if (card.rule) {
+    const line = document.createElement("p");
+    line.className = "card-rule";
+    line.textContent = card.rule;
+    content.appendChild(line);
+  }
   (card.keywords || []).forEach((keyword) => {
     const line = document.createElement("p");
     line.className = "keyword-rule";
@@ -2236,11 +2282,15 @@ function renderOpponentField() {
     const legal = targeting && !validateAction({ type: "attack", attacker: game.selectedAttacker, target }, game.currentPlayer);
     if (slot) {
       const card = cardEl(slot.card, slot.stunned ? "stunned" : "", opp);
+      const hit = impactAt(opp, index);
+      if (hit) card.classList.add("impact", `impact-${hit.kind}`);
       card.onclick = (event) => { event.stopPropagation(); if (targeting) attackSlot(target); else showCardDetails(slot.card); };
       zone.appendChild(card);
     } else {
       zone.classList.add("empty");
-      zone.textContent = legal ? "Attack directly" : "Empty zone";
+      const gone = impactAt(opp, index);
+      if (gone && gone.kind === "destroyed" && !legal) { zone.classList.add("impact", "impact-destroyed"); zone.textContent = `Destroyed: ${gone.name}`; }
+      else zone.textContent = legal ? "Attack directly" : "Empty zone";
     }
     if (legal) {
       zone.classList.add("targetable");
@@ -2273,6 +2323,8 @@ function renderPlayerField() {
     zone.dataset.slot = index;
     if (slot) {
       const el = cardEl(slot.card, "", seat);
+      const hit = impactAt(seat, index);
+      if (hit) el.classList.add("impact", `impact-${hit.kind}`);
       const tired = slot.summonSickness || slot.hasAttacked || slot.stunned || !myTurn;
       if (tired) el.classList.add("dimmed");
       if (game.selectedAttacker === index) el.classList.add("selected");
@@ -2287,7 +2339,9 @@ function renderPlayerField() {
       zone.appendChild(el);
     } else {
       zone.classList.add("empty");
-      zone.textContent = "Empty zone";
+      const gone = impactAt(seat, index);
+      if (gone && gone.kind === "destroyed") { zone.classList.add("impact", "impact-destroyed"); zone.textContent = `Destroyed: ${gone.name}`; }
+      else zone.textContent = "Empty zone";
     }
     field.appendChild(zone);
   });

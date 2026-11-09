@@ -60,7 +60,7 @@ async function playLegal(page, onlyMonster = false) {
   await fs.mkdir(output, { recursive: true });
   browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH } : {}), args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   const page = await newPage();
-  await check('desktop menu and all 55 SVG artworks decode', async () => {
+  await check('desktop menu and all 75 SVG artworks decode', async () => {
     await layout(page, 'desktop-menu');
     assert.equal(await page.evaluate(() => getComputedStyle(document.body).overflow), 'hidden', 'Menu locks background scrolling');
     await screenshot(page, '01-menu-desktop');
@@ -69,11 +69,11 @@ async function playLegal(page, onlyMonster = false) {
       const urls = cards.map(card => ShadowCardArt.src(card));
       await Promise.all(urls.map(async src => { const image = new Image(); image.src = src; await image.decode(); if (!image.naturalWidth) throw new Error(src); }));
       return { count: cards.length, unique: new Set(urls).size };
-    }); assert.deepEqual(art, { count: 55, unique: 55 });
+    }); assert.deepEqual(art, { count: 75, unique: 75 });
   });
   await check('collection filters, empty results, reset, inspection and rules', async () => {
     await page.locator('#lobby-menu [data-open-collection]').click();
-    assert.equal(await page.locator('.collection-card').count(), 55);
+    assert.equal(await page.locator('.collection-card').count(), 75);
     assert.equal(await page.evaluate(() => getComputedStyle(document.body).overflow), 'hidden', 'Modal locks background scrolling');
     await page.selectOption('#collection-type', 'monster');
     assert.ok(await page.locator('.collection-card').count() > 0);
@@ -82,7 +82,7 @@ async function playLegal(page, onlyMonster = false) {
     await page.fill('#collection-search', 'zzzz-no-card');
     assert.equal(await page.locator('.collection-card').count(), 0);
     assert.match(await page.textContent('.collection-empty'), /No matching/);
-    await page.click('#collection-reset'); assert.equal(await page.locator('.collection-card').count(), 55);
+    await page.click('#collection-reset'); assert.equal(await page.locator('.collection-card').count(), 75);
     const before = await snapshot(page);
     await page.locator('.collection-card').first().click();
     assert.equal(await page.locator('#collection-preview').isVisible(), true);
