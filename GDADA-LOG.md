@@ -577,3 +577,51 @@ a shortcut.
   under `ART_LENIENT`.
 - **Commits while agents draw:** build the assets in a scratch copy that has only the finished modules, so no commit
   carries half-drawn art or stale assets.
+
+---
+
+# Run 3: one art style for the whole set (9 Nov 2026)
+
+**Mode:** Player-first. **Run type:** Polish, on the art only. Rules, abilities and UI are frozen.
+
+## Step 0: vision
+
+- The owner graded run 2's art: "Art is okay all that is a C needs work".
+- Three styles were prototyped by three agents on the same three cards (Ashen Dragon, Celestial Guardian, Fireball):
+  painterly, stained glass and woodcut. They were shown beside the C art in `panel/style-compare.png`.
+- The owner's choice: "Mix two of them", then "Woodcut + painterly", then the correction "Combine wood and stained no
+  misimpit". Final direction: **woodcut + stained glass**, recorded as Must-have 10 before any build.
+- A style lead drew the three references in the mix (`panel/run3/reference.png`) and wrote `docs/ART_STYLE.md`. The
+  owner approved them ("Yes, all 75") before the fan-out.
+
+## Decision Records (run 3)
+
+- **M21 Plate pipeline:**
+  - `scripts/art-plates/*.cjs` hold whole-card illustrations. The subject sits in `g[data-figure]`, which
+    `card_art.py` measures exactly.
+  - The shared helpers live in `scripts/art-lib/glass.cjs`.
+  - The build fills in any palette gradient a plate references but forgot to define. Three plates had references
+    resolving to nothing, which the art test caught.
+- **M22 Limits for the chosen style:**
+  - `noise` was relaxed to 0.95 (leading is interior edges by design) and `off` to 0.25 (deliberate off-centre
+    composition). sep, twin, area and kept stay the guards.
+  - The asset budget went from 900 KB to 1.25 MB, plus a 220 KB gzipped cap. Actual: 788 KB, 139 KB gzipped.
+- **M23 Redraw all 75 (BREAK, the ambition push):**
+  - Nine illustrator agents, one family each, following the guide. Each family was committed only through a scratch
+    build containing finished plates.
+  - Two generated-SVG defects were caught by the art test before commit: an undefined gradient, and arrow path data
+    emitted as bare text.
+  - Before -> after at the 53x40 board: minimum sep 1.61 -> 1.67, median 1.88 -> 2.09, twins 0 -> 0 (maximum
+    similarity 0.55).
+  - Remaining flags: noise on 9-16 cards at the two smallest boards (dense leading), and hue on the neutral group
+    (which has no single colour).
+- **M24 Separation repair:** Iron Golem and Stone Guardian, once their missing gradient was defined, had mid-blue panes
+  behind the figure.
+  - Four variants were measured; ash/violet kept. Iron Golem 1.41 -> 1.67.
+
+## Panel (run 3)
+
+| Seat | Verdict | Resolution |
+|---|---|---|
+| Lenses (Schell) | PASS: no picture contradicts its rule; notes on Crystal Sentinel's name and the recurring rose-window disc | Crystal Sentinel revised (M25) |
+| Readability (Solarski) | OBJECT (minor): "a clear step up from C and works as one series". Burst competes on Crystal Sentinel and Iron Golem; Shadow Stalker and Undertow too dark or thin | ADAPT: M25 |
