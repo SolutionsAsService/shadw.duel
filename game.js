@@ -1374,6 +1374,7 @@ function destroyMonster(playerIndex, slotIndex) {
 
   player.field[slotIndex] = null;
 
+  game.lastDestroyed = { seat: playerIndex, card: slot.card };
   // Death abilities resolve after the slot is empty, at most 8 deep so chains end.
   game.deathDepth = (game.deathDepth || 0) + 1;
   if (game.deathDepth <= 8) trigger(slot.card, "onDeath", playerIndex, slotIndex);

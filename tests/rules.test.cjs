@@ -249,7 +249,7 @@ test('combat: winning overflow, tie destruction, losing backlash, Burn and Lifes
   field(api, 'Flame Serpent');
   field(api, 'Ironclad Mercenary', 1);
   api.act({ type: 'attack', attacker: 0, target: 0 });
-  assert.equal(api.state().players[1].lp, 7300); // 200 overflow + 200 Burn + 300 from Flame Serpent's Kill ability.
+  assert.equal(api.state().players[1].lp, 7350); // 200 overflow + 200 Burn + 250: Flame Serpent's Kill deals half of Ironclad Mercenary's 500 ATK.
   assert.equal(api.state().players[1].field[0], null);
   field(api, 'Dread Reaper', 0, 1);
   field(api, 'Ironclad Mercenary', 1);

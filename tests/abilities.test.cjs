@@ -78,15 +78,40 @@ test('Kill: Sky Hunter attacks once more, only once per turn', () => {
   assert.equal(api.state().players[0].field[0].hasAttacked, true, 'the second kill grants nothing more');
 });
 
-test('Death: Deep Sea Leviathan draws 2 when destroyed in combat', () => {
+test('Death: Deep Sea Leviathan drags the weakest enemy down with it', () => {
   const api = engine();
   field(api, 'Deep Sea Leviathan', 0, 0, true);
   field(api, 'Worldbreaker Titan', 1, 0);
+  field(api, 'Gloom Mite', 1, 1);        // 250 DEF
   api.endTurn();
-  const before = api.state().players[0].hand.length;
   assert.equal(api.act({ type: 'attack', attacker: 0, target: 0 }), true);
   assert.equal(api.state().players[0].field[0], null);
-  assert.equal(api.state().players[0].hand.length, before + 2);
+  assert.equal(api.state().players[1].field[1], null, 'Gloom Mite dragged under');
+});
+
+test('Death: Pyre Phoenix returns to its owner\'s hand once, reset', () => {
+  const api = engine();
+  const phoenix = field(api, 'Pyre Phoenix', 0, 0, true);
+  phoenix.card.bonusAtk = 300;
+  field(api, 'Worldbreaker Titan', 1, 0);
+  api.endTurn();
+  api.act({ type: 'attack', attacker: 0, target: 0 });
+  const hand = api.state().players[0].hand;
+  assert.ok(hand.some((c) => c.name === 'Pyre Phoenix'));
+  assert.equal(hand.find((c) => c.name === 'Pyre Phoenix').bonusAtk, 0);
+  assert.equal(hand.find((c) => c.name === 'Pyre Phoenix').reborn, true);
+});
+
+test('Attack: Sky Sovereign rallies a wind creature that already attacked', () => {
+  const api = engine();
+  const falcon = field(api, 'Wind Falcon', 0, 0);
+  field(api, 'Sky Sovereign', 0, 1);
+  field(api, 'Gloom Mite', 1, 0);
+  field(api, 'River Sprite', 1, 1);
+  api.act({ type: 'attack', attacker: 0, target: 0 });
+  assert.equal(falcon.hasAttacked, true);
+  api.act({ type: 'attack', attacker: 1, target: 1 });
+  assert.equal(falcon.hasAttacked, false, 'the falcon may attack again');
 });
 
 test('Dawn: Stone Guardian grows at the start of its turn and stops at +300', () => {

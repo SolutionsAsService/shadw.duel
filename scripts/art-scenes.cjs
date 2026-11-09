@@ -17,7 +17,8 @@ const SETTINGS = {
   shadow: ['void', 'ruins', 'forest', 'cavern', 'void'],
   neutral: ['ruins', 'plains', 'temple', 'forest', 'peaks'],
 };
-const TIMES = ['dawn', 'day', 'dusk', 'night'];
+// Night is one pick in six (Lenses, run 2: 27 of 75 cards were night and read as one palette).
+const TIMES = ['dawn', 'day', 'dusk', 'day', 'dusk', 'night'];
 
 // Cards whose subject asks for a particular place or hour.
 const OVERRIDES = {
@@ -244,7 +245,7 @@ function lightVector(p) {
   return fromLeft ? { x1: 0, y1: 0, x2: 1, y2: 1 } : { x1: 1, y1: 0, x2: 0, y2: 1 };
 }
 
-function scene(card, index, palette) {
+function scene(card, index, palette, ownComposition = false) {
   const [bg, mid, glow, white] = palette;
   const p = plan(card, index);
   const tint = TINT[p.time];
@@ -259,7 +260,8 @@ function scene(card, index, palette) {
     + `<linearGradient id="form" x1="${lv.x1}" y1="${lv.y1}" x2="${lv.x2}" y2="${lv.y2}"><stop stop-color="${white}" stop-opacity=".3"/><stop offset=".42" stop-color="${white}" stop-opacity="0"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>`
     + `<radialGradient id="vignette" cx=".5" cy=".46" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>`;
   const sky = `<rect width="400" height="300" fill="url(#sky)"/>`;
-  const { dx, dy, scale } = p.camera;
+  // A redrawn subject composes itself; the automatic camera applies to the older drawings.
+  const { dx, dy, scale } = ownComposition ? { dx: 0, dy: 0, scale: 1 } : p.camera;
   const shadowX = r1(200 + dx + (p.sun.x < 200 ? 26 : -26));
   const ground = `<ellipse cx="${shadowX}" cy="${Math.min(282, p.horizon + 62)}" rx="${r1(130 * scale)}" ry="15" fill="#03050b" opacity=".6"/>`;
   return {

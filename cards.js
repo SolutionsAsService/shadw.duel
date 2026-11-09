@@ -148,6 +148,28 @@ function destroyAll(game, side, limit, name, except = -1) {
   doomed.forEach((i) => game.destroyMonster(side, i));
 }
 
+
+// Pyre Phoenix: back to its owner's hand once (stats reset), if the hand has room.
+function rebirth(game, seat, _unused, name) {
+  const player = game.players[seat];
+  const card = game.lastDestroyed && game.lastDestroyed.seat === seat ? game.lastDestroyed.card : null;
+  if (!card || card.reborn || player.hand.length >= 9) return;
+  card.reborn = true;
+  card.bonusAtk = 0; card.bonusDef = 0; card.tempAtk = 0; card.tempDef = 0; card.grown = 0;
+  player.hand.push(card);
+  game.addLog(`${name} rises from its ashes and returns to your hand.`);
+}
+// Sky Sovereign: the leftmost other creature matching \`test\` that has attacked may attack again.
+function rally(game, seat, except, test, name) {
+  const field = game.players[seat].field;
+  const index = field.findIndex((slot, i) => slot && i !== except && slot.hasAttacked && test(slot.card) && !slot.extraAttackUsed);
+  if (index === -1) return;
+  field[index].hasAttacked = false;
+  field[index].extraAttackUsed = true;
+  game.markImpact(seat, index, "boosted", field[index].card.name);
+  game.addLog(`${name} rallies ${field[index].card.name}: it may attack again.`);
+}
+
 // ============================================================
 // MONSTER TEMPLATES
 // ============================================================
@@ -197,9 +219,9 @@ const MONSTER_TEMPLATES = [
     atk: 700,
     def: 400,
     keywords: ["burn"],
-    text: "Kill: deal 300 damage to your opponent.",
+    text: "Kill: deal half the destroyed creature's ATK to your opponent.",
     flavor: "Its attacks leave burning wounds.",
-    onKill: (game, seat, ...args) => { game.dealDamage(1 - seat, 300, "Flame Serpent"); },
+    onKill: (game, seat, ...args) => { const half = Math.floor(((args[1] && args[1].atk) || 0) / 2); game.dealDamage(1 - seat, half, "Flame Serpent"); },
 
   },
 
@@ -292,9 +314,9 @@ const MONSTER_TEMPLATES = [
     atk: 1050,
     def: 1000,
     keywords: ["guard"],
-    text: "Death: draw 2 cards.",
+    text: "Death: drag down the lowest-DEF enemy without Ward with 400 DEF or less.",
     flavor: "A massive creature from the deepest waters.",
-    onDeath: (game, seat, ...args) => { game.drawCards(seat, 2); },
+    onDeath: (game, seat, ...args) => { destroyPick(game, seat, "lowest-def", 400, "Deep Sea Leviathan"); },
 
   },
 
@@ -451,7 +473,7 @@ const MONSTER_TEMPLATES = [
     cost: 5,
     atk: 1100,
     def: 750,
-    keywords: ["swift"],
+    keywords: [],
     text: "Summon: enemies without Ward lose 200 DEF until their next turn.",
     flavor: "A giant formed from a living storm.",
     onSummon: (game, seat, ...args) => { weakenAll(game, seat, 200, "Tempest Giant"); },
@@ -467,9 +489,9 @@ const MONSTER_TEMPLATES = [
     atk: 1350,
     def: 950,
     keywords: ["swift", "ward"],
-    text: "Attack: restore 200 LP.",
+    text: "Attack: another wind creature that already attacked may attack again.",
     flavor: "Master of the upper skies.",
-    onAttack: (game, seat, ...args) => { game.healPlayer(seat, 200); },
+    onAttack: (game, seat, ...args) => { rally(game, seat, args[0], (c) => c.element === "wind", "Sky Sovereign"); },
 
   },
 
@@ -647,9 +669,9 @@ const MONSTER_TEMPLATES = [
     atk: 550,
     def: 650,
     keywords: ["ward"],
-    text: "Dawn: gains +100 ATK for good (up to +300).",
+    text: "Dawn: if you hold 2 or fewer cards, draw a card.",
     flavor: "A mechanical construct powered by arcane energy.",
-    onDawn: (game, seat, ...args) => { grow(game, seat, args[0], 100, 0, 300, "Arcane Automaton"); },
+    onDawn: (game, seat, ...args) => { if (game.players[seat].hand.length <= 2) { game.addLog("Arcane Automaton whirs: draw a card."); game.drawCards(seat, 1); } },
 
   },
 
@@ -710,9 +732,9 @@ const MONSTER_TEMPLATES = [
     onDawn: (game, seat, ...args) => { weakenPick(game, seat, 0, 200, "Brine Witch"); },
     },
   { name: "Pyre Phoenix", icon: "🐦‍🔥", element: "flame", rarity: "rare", cost: 5, atk: 950, def: 600,
-    keywords: ["burn", "lifesteal"], text: "Death: restore 500 LP and draw a card.",
+    keywords: ["burn", "lifesteal"], text: "Death: it returns to your hand, once.",
     flavor: "It burns its enemies and drinks the heat back.",
-    onDeath: (game, seat, ...args) => { game.healPlayer(seat, 500); game.drawCards(seat, 1); },
+    onDeath: (game, seat, ...args) => { rebirth(game, seat, this, "Pyre Phoenix"); },
     },
   { name: "Gale Harpy", icon: "🪶", element: "wind", rarity: "uncommon", cost: 4, atk: 750, def: 450,
     keywords: ["swift", "debuff"], text: "Attack: your other wind creatures gain +100 ATK until your next turn.",

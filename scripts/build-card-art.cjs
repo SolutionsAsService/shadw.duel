@@ -268,6 +268,25 @@ subjects['Dawn Acolyte'] = () => circle(200, 98, 66, 'url(#flare)', 'opacity=".4
 subjects['Void Hound'] = () => mirror(wolf(true));
 subjects['Tide Serpent'] = () => mirror(serpent(true));
 
+// Redrawn subjects (GDADA run 2): each module in scripts/art-subjects/ exports
+// (kit) => ({ 'Card Name': () => svg, ... }) and replaces those cards' drawings.
+const kit = { p, line, circle, group, armor, gem, eye, star, dark, thick: (d, width, color = 'var(--mid)') => p(d, 'none', `stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"`) };
+const subjectDir = path.join(__dirname, 'art-subjects');
+const redrawn = new Set();
+if (fs.existsSync(subjectDir)) {
+  for (const file of fs.readdirSync(subjectDir).filter((f) => f.endsWith('.cjs')).sort()) {
+    try {
+      const drawn = require(path.join(subjectDir, file))(kit);
+      for (const name of Object.keys(drawn)) redrawn.add(name);
+      Object.assign(subjects, drawn);
+    } catch (error) {
+      // preview-art.cjs sets ART_LENIENT so one unfinished module does not stop others' previews.
+      if (process.env.ART_LENIENT !== '1') throw error;
+      console.error(`skipped ${file}: ${error.message}`);
+    }
+  }
+}
+
 // Value rim (GDADA run 1, Solarski): the subject is first drawn as a light outline
 // a few pixels wider than itself, so its silhouette separates from the sky by value,
 // not by hue. It sits inside the subject group, so it is part of the figure.
@@ -359,7 +378,7 @@ function render(card, index = 0) {
   if (!subjects[card.name]) throw new Error(`Missing illustration for ${card.name}`);
   const [bg, mid, glow, white] = palette;
   const title = xml(card.name);
-  const view = scene(card, index, palette);
+  const view = scene(card, index, palette, redrawn.has(card.name));
   const subject = subjectOf(card);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" role="img" aria-labelledby="title desc">
 <title id="title">${title}</title>
@@ -374,7 +393,7 @@ ${view.defs}
 </defs>
 <g style="--mid:${mid};--glow:${glow};--white:${white}">
 ${view.back}
-<g stroke-linejoin="round"><g transform="${view.transform}">${rim(subject, WIDE_RIM[card.name] || 7)}${subject}${formShade(subject)}${surface(subject, card.name)}</g></g>
+<g stroke-linejoin="round"><g transform="${view.transform}">${rim(subject, WIDE_RIM[card.name] || 7)}${subject}${formShade(subject)}${redrawn.has(card.name) ? '' : surface(subject, card.name)}</g></g>
 ${view.front}
 <rect width="400" height="300" fill="url(#shade)"/>
 <path d="M14 52V14H52M348 14H386V52M14 248V286H52M348 286H386V248" fill="none" stroke="${glow}" opacity=".34"/>
